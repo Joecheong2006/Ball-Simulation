@@ -8,6 +8,12 @@
 #include <glad/gl.h> 
 
 namespace gl {
+    namespace detail {
+        template<typename T> struct get_type        { static constexpr int type = 0; };
+        template <>          struct get_type<int>   { static constexpr int type = GL_INT; };
+        template <>          struct get_type<float> { static constexpr int type = GL_FLOAT; };
+    }
+
     struct BufferLayout {
         unsigned int Vao;
         int currentLocation = 0;
@@ -31,7 +37,7 @@ namespace gl {
         template <typename BaseType>
         struct Struct {
             std::vector<int> itemsCount;
-            int type = GetGLType<BaseType>::type;
+            int type = detail::get_type<BaseType>::type;
             int stride = 0;
 
             Struct(const std::initializer_list<int> &itemsCount)
@@ -77,18 +83,11 @@ namespace gl {
         template <typename BaseType>
         void set(int offset, int size, int stride, int divisor = 0) {
             glEnableVertexAttribArray(currentLocation);
-            glVertexAttribPointer(currentLocation, size, GetGLType<BaseType>::type, GL_FALSE,
+            glVertexAttribPointer(currentLocation, size, detail::get_type<BaseType>::type, GL_FALSE,
                     stride * sizeof(BaseType), (void*)(offset * sizeof(BaseType)));
             setDivisor(divisor);
             ++currentLocation;
         }
-
-        template<typename T>
-        struct GetGLType {};
-
-        template <> struct GetGLType<int> { static constexpr int type = GL_INT; };
-        template <> struct GetGLType<unsigned int> { static constexpr int type = GL_UNSIGNED_INT; };
-        template <> struct GetGLType<float> { static constexpr int type = GL_FLOAT; };
 
     };
 
