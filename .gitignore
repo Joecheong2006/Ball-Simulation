@@ -2,6 +2,7 @@
 bin/
 
 # Files
+*.DS_Store
 *.o
 *.d
 *.exe
