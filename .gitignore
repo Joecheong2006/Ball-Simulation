@@ -9,3 +9,8 @@ build/
 *.exe
 .vscode
 .cache
+
+# vcpkg
+vcpkg_installed/
+.vcpkg/
+vcpkg/
