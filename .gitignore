@@ -14,3 +14,5 @@ build/
 vcpkg_installed/
 .vcpkg/
 vcpkg/
+vcpkg.json
+vcpkg-configuration.json
