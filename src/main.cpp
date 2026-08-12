@@ -168,30 +168,35 @@ struct Physics2DState {
     glm::vec2 v, a;
 };
 
-struct Entity {
-    int id;
-};
-
 struct Physics2DWorld {
     std::vector<Transform2D> transforms;
-    std::vector<Physics2DState> physicsState;
+    std::vector<Physics2DState> physicsStates;
+    int N = 0;
 
-    void updatePhysicsState(std::vector<Entity> &entities, float dt) {
-        float dt2 = dt * dt;
-
-        for (const auto &e : entities) {
-            auto a = physicsState[e.id].a = glm::vec2(0.0f, -9.81f);
-            auto v = physicsState[e.id].v += a * dt;
-
-            transforms[e.id].position += 0.5f * a * dt2 + v * dt;
-        }
+    std::size_t addObject(const Transform2D &transform = {}, const Physics2DState &state = {}) {
+        transforms.push_back(transform);
+        physicsStates.push_back(state);
+        return ++N;
     }
 
-    void updatePhysics(std::vector<Entity> &entities, float dt) {
-        updatePhysicsState(entities, dt);
+    void updatePhysicsStates(float dt) {
+        float dt2 = dt * dt;
+
+        for (std::size_t i = 0; i < N; ++i) {
+            const auto &a = physicsStates[i].a = glm::vec2(0.0f, -9.81f);
+            const auto &v = physicsStates[i].v += a * dt;
+            transforms[i].position += 0.5f * a * dt2 + v * dt;
+        }
+
+    }
+
+    void updatePhysics(float dt) {
+        assert(transforms.size() == N);
+        updatePhysicsStates(dt);
     }
 
     void loadTransformsToGPUBuffer(const gl::Buffer &buffer) const {
+        buffer.bind();
         buffer.setData(transforms.size() * sizeof(Transform2D), transforms.data());
     }
 };
@@ -352,18 +357,11 @@ int main(void) {
 
     std::uniform_real_distribution<float> dis(0.0f, 1.0f);
 
-    int N = 300'000;
-
-    std::vector<Entity> entities;
-    entities.resize(N);
+    std::size_t N = 1'000'000;
 
     Physics2DWorld physicsWorld;
-    physicsWorld.transforms.resize(N);
-    physicsWorld.physicsState.resize(N);
 
-    for (int i = 0; i < N; ++i) {
-        entities[i].id = i;
-
+    for (std::size_t i = 0; i < N; ++i) {
         float u1 = dis(gen) * 2.0f * 3.14156;
 
         float x = 16.0f * std::pow(sin(u1), 3);
@@ -380,7 +378,7 @@ int main(void) {
         y *= r;
 
         float u2 = dis(gen) * 0.005;
-        physicsWorld.transforms[i] = Transform2D{ { x, y }, u2 };
+        physicsWorld.addObject({ { x, y }, u2 });
     }
 
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -388,16 +386,23 @@ int main(void) {
         glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Physics update and upload
-        physicsWorld.updatePhysics(entities, 1.0 / 120);
-        for (const auto &e : entities) {
-            if (physicsWorld.transforms[e.id].position.y < -3) {
-                physicsWorld.transforms[e.id].position.y += 4.3;
-                physicsWorld.physicsState[e.id].v = {};
+        { SCOPE_TIMER();
+            // Physics update and upload
+            physicsWorld.updatePhysics(1.0 / 120);
+            std::printf("%-30s", "updatePhysics");
+        }
+
+        for (size_t i = 0; i < N; ++i) {
+            if (physicsWorld.transforms[i].position.y < -3) {
+                physicsWorld.transforms[i].position.y += 4.3;
+                physicsWorld.physicsStates[i].v = {};
             }
         }
 
-        physicsWorld.loadTransformsToGPUBuffer(transformVbo);
+        { SCOPE_TIMER();
+            physicsWorld.loadTransformsToGPUBuffer(transformVbo);
+            std::printf("%-30s", "loadTransformsToGPUBuffer");
+        }
 
         texture.bind();
 
@@ -405,7 +410,10 @@ int main(void) {
         layout.bind();
 
         // glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, N); 
-        glDrawElementsInstanced(GL_TRIANGLE_FAN, 6, GL_UNSIGNED_INT, (void*)0, N);
+        { SCOPE_TIMER();
+            glDrawElementsInstanced(GL_TRIANGLE_FAN, 6, GL_UNSIGNED_INT, (void*)0, N);
+            std::printf("%-30s", "glDrawElementsInstanced");
+        }
 
         MainWindow::SwapBuffers();
         glfwPollEvents();
