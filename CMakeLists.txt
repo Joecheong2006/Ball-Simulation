@@ -38,7 +38,7 @@ add_executable(Simulation
 
 target_compile_definitions(Simulation PRIVATE PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
 
-target_include_directories(Simulation PRIVATE include/ lib/)
+target_include_directories(Simulation PRIVATE lib/)
 
 target_link_libraries(Simulation PRIVATE
     glad
