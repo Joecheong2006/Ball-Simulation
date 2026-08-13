@@ -357,17 +357,17 @@ int main(void) {
 
     std::uniform_real_distribution<float> dis(0.0f, 1.0f);
 
-    std::size_t N = 1'000'000;
+    int N = 1'000'000;
 
     Physics2DWorld physicsWorld;
 
     for (std::size_t i = 0; i < N; ++i) {
-        float u1 = dis(gen) * 2.0f * 3.14156;
+        float u1 = dis(gen) * 2.0f * 3.14156f;
 
-        float x = 16.0f * std::pow(sin(u1), 3);
-        float y = 13.0f * cos(u1) - 5.0f * cos(2.0f * u1) - 2.0 * cos(3.0f * u1) - cos(4.0f * u1);
+        float x = 16.f * std::pow(sin(u1), 3.f);
+        float y = 13.f * cos(u1) - 5.f * cos(2.f * u1) - 2.f * cos(3.f * u1) - cos(4.f * u1);
 
-        float scale = 0.06;
+        float scale = 0.06f;
 
         x *= scale;
         y *= scale;
@@ -377,7 +377,7 @@ int main(void) {
         x *= r;
         y *= r;
 
-        float u2 = dis(gen) * 0.005;
+        float u2 = dis(gen) * 0.005f;
         physicsWorld.addObject({ { x, y }, u2 });
     }
 
@@ -388,13 +388,13 @@ int main(void) {
 
         { SCOPE_TIMER();
             // Physics update and upload
-            physicsWorld.updatePhysics(1.0 / 120);
+            physicsWorld.updatePhysics(1.f / 120);
             std::printf("%-30s", "updatePhysics");
         }
 
         for (size_t i = 0; i < N; ++i) {
             if (physicsWorld.transforms[i].position.y < -3) {
-                physicsWorld.transforms[i].position.y += 4.3;
+                physicsWorld.transforms[i].position.y += 4.3f;
                 physicsWorld.physicsStates[i].v = {};
             }
         }

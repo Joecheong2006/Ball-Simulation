@@ -8,7 +8,7 @@ namespace Resources {
         int width, height, channels, bits;
     };
 
-    class Image;
+    struct Image;
     void FreeImage(Image&);
 
     struct Image {
