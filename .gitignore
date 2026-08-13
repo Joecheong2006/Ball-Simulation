@@ -16,3 +16,6 @@ vcpkg_installed/
 vcpkg/
 vcpkg.json
 vcpkg-configuration.json
+
+# Config files
+compile_commands.json
