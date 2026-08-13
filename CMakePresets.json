@@ -1,0 +1,47 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "debug",
+            "displayName": "Debug Mode",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "BUILD_BENCHMARKS": "OFF",
+                "OUTPUT_SUBDIR": "bin-debug",
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_CMAKE}"
+            }
+        },
+        {
+            "name": "release",
+            "displayName": "Release Mode",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_BENCHMARKS": "ON",
+                "OUTPUT_SUBDIR": "bin-release",
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_CMAKE}"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "debug",
+            "configurePreset": "debug",
+            "configuration": "Debug",
+            "targets": [ "Simulation" ]
+        },
+        {
+            "name": "release",
+            "configurePreset": "release",
+            "configuration": "Release",
+            "targets": [ "Simulation" ]
+        },
+        {
+            "name": "bench",
+            "configurePreset": "release",
+            "configuration": "Release",
+            "targets": [ "bench" ]
+        }
+    ]
+}
