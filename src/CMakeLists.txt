@@ -1,3 +1,6 @@
+find_package(glm CONFIG REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
+
 add_library(SimulationLib STATIC
     Resources.cpp
 
@@ -21,6 +24,3 @@ target_include_directories(SimulationLib PUBLIC
 )
 
 target_compile_definitions(SimulationLib PUBLIC PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
-
-add_executable(Simulation main.cpp)
-target_link_libraries(Simulation PRIVATE SimulationLib)
