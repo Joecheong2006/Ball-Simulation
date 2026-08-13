@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../aggreate.h"
+#include "aggreate.h"
 
 #include <vector>
 #include <numeric>

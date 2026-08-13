@@ -2,9 +2,10 @@ cmake_minimum_required(VERSION 3.14)
 project(BallSimulation LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(glm REQUIRED)
 
 include(FetchContent)
 
@@ -24,23 +25,4 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(glfw)
 
 add_subdirectory(lib/glad)
-
-add_executable(Simulation
-    src/main.cpp
-    src/Resources.cpp
-
-    src/gl/Buffer.cpp
-    src/gl/Shader.cpp
-    src/gl/ShaderProgram.cpp
-
-    lib/stb_image/stb_image.cpp
-)
-
-target_compile_definitions(Simulation PRIVATE PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
-
-target_include_directories(Simulation PRIVATE lib/)
-
-target_link_libraries(Simulation PRIVATE
-    glad
-    glfw
-)
+add_subdirectory(src)

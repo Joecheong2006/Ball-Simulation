@@ -5,4 +5,4 @@ project(GladTarget LANGUAGES C)
 add_library(glad STATIC src/gl.c)
 
 # Expose your local header directory paths
-target_include_directories(glad PUBLIC include/)
+target_include_directories(glad PUBLIC include)
