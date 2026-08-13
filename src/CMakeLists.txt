@@ -21,6 +21,7 @@ target_link_libraries(SimulationLib PUBLIC
 target_include_directories(SimulationLib PUBLIC 
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/lib
+    ${CMAKE_SOURCE_DIR}/src
 )
 
 target_compile_definitions(SimulationLib PUBLIC PROJECT_ROOT="${CMAKE_SOURCE_DIR}")

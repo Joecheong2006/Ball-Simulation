@@ -1,4 +1,4 @@
-#include "ShaderProgram.h"
+#include "gl/ShaderProgram.h"
 
 namespace gl {
     ShaderProgram::ShaderProgram() : id(glCreateProgram()) {}

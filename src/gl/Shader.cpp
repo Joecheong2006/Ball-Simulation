@@ -1,4 +1,4 @@
-#include "Shader.h"
+#include "gl/Shader.h"
 
 namespace gl {
     Shader::Shader(int type, const char *source)
