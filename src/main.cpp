@@ -415,7 +415,10 @@ int main(void) {
             std::printf("%-30s", "glDrawElementsInstanced");
         }
 
-        MainWindow::SwapBuffers();
+        { SCOPE_TIMER();
+            MainWindow::SwapBuffers();
+            std::printf("%-30s", "MainWindow::SwapBuffers");
+        }
         glfwPollEvents();
     }
 
