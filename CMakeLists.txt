@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 project(BallSimulation LANGUAGES CXX)
 
-if(NOT DEFINED OUTPUT_SUBDIR)
-    set(OUTPUT_SUBDIR "bin")
-endif()
-
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../${OUTPUT_SUBDIR})
 
 if(CMAKE_CONFIGURATION_TYPES)
