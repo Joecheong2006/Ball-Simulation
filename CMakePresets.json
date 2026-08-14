@@ -8,8 +8,9 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
                 "BUILD_BENCHMARKS": "OFF",
-                "OUTPUT_SUBDIR": "bin-debug",
-                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_CMAKE}"
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_CMAKE}",
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/build/bin-${presetName}",
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG": "${sourceDir}/build/bin-${presetName}"
             }
         },
         {
@@ -19,8 +20,9 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "BUILD_BENCHMARKS": "ON",
-                "OUTPUT_SUBDIR": "bin-release",
-                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_CMAKE}"
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_CMAKE}",
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/build/bin-${presetName}",
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE": "${sourceDir}/build/bin-${presetName}"
             }
         },
         {
