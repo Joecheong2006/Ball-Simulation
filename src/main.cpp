@@ -7,14 +7,14 @@
 
 #include "stb_image/stb_image.h"
 
-#include "Resources.h"
-
 #include <vector>
 #include <string>
 #include <assert.h>
 #include <random>
 
 #include <chrono>
+
+#define SOA_TRANSFORM 1
 
 struct ScopeTimer {
     std::chrono::high_resolution_clock::time_point start
@@ -57,8 +57,10 @@ const char *vertexShaderSource = R"(
 #version 330 core
 layout (location = 0) in vec2 aPos;
 layout (location = 1) in vec2 aTexCoord;
+
 layout (location = 2) in vec2 aInstancePos;
-layout (location = 3) in float aInstanceR;
+layout (location = 3) in vec2 aInstanceScale;
+layout (location = 4) in float aInstanceAngle;
 
 out vec2 TexCoord;
 
@@ -68,11 +70,14 @@ uniform vec2 camPos;
 void main() {
     TexCoord = aTexCoord;
 
+    float c = cos(aInstanceAngle);
+    float s = sin(aInstanceAngle);
+
     mat4 model = mat4(
-        aInstanceR,  0.0,  0.0,  0.0,
-        0.0,  aInstanceR,  0.0,  0.0,
-        0.0,  0.0,  aInstanceR,  0.0,
-        aInstancePos.x, aInstancePos.y, 0, 1.0
+        c * aInstanceScale.x, s * aInstanceScale.x, 0.0, 0.0,
+        -s * aInstanceScale.y, c * aInstanceScale.y, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        aInstancePos.x, aInstancePos.y, 0.0, 1.0
     );
 
     mat4 view = mat4(
@@ -95,21 +100,19 @@ in vec2 TexCoord;
 uniform sampler2D tex;
 
 void main() {
-    // vec2 uv = TexCoord * 2.0f - 1.0f;
-    // if (uv.x * uv.x + uv.y * uv.y < 1.0) {
-    //     FragColor = vec4(1);
-    // }
-    // else {
-    //     FragColor = vec4(0);
-    // }
-    FragColor = texture(tex, TexCoord);
+    vec2 uv = TexCoord * 2.0f - 1.0f;
+    if (uv.x * uv.x + uv.y * uv.y < 1.0) {
+        FragColor = vec4(1);
+    }
+    else {
+        FragColor = vec4(0);
+    }
 }
 )";
 
 #include "gl/Buffer.h"
 #include "gl/BufferLayout.h"
 #include "gl/ShaderProgram.h"
-#include "gl/Texture2D.h"
 
 struct MainWindow {
     static inline void Initialize(int width, int height, const std::string &title) {
@@ -159,23 +162,53 @@ struct OrthoCamera {
 
 };
 
+struct Transform2DSoA {
+    std::vector<glm::vec2> positions, scales;
+    std::vector<float> angles;
+};
+
 struct Transform2D {
-    glm::vec2 position;
-    float scale;
+    glm::vec2 position, scale;
+    float angle;
+
+    glm::mat4 toMat4() {
+        float c = std::cos(angle);
+        float s = std::sin(angle);
+        glm::mat4 m(1.0f);
+        m[0] = glm::vec4(c * scale.x, s * scale.x, 0.0f, 0.0f);
+        m[1] = glm::vec4(-s * scale.y, c * scale.y, 0.0f, 0.0f);
+        m[3] = glm::vec4(position.x, position.y, 0.0f, 1.0f);
+        return m;
+    }
+};
+
+struct Circle {
+    glm::vec2 origin;
+    float radius;
 };
 
 struct Physics2DState {
-    glm::vec2 v, a;
+    glm::vec2 p, v, a;
+    float theta;
+};
+
+struct Physics2DStateSoA {
+    std::vector<glm::vec2> p, v, a;
+    std::vector<float> theta;
 };
 
 struct Physics2DWorld {
-    std::vector<Transform2D> transforms;
-    std::vector<Physics2DState> physicsStates;
+    std::vector<Circle> circles;
+    Physics2DStateSoA physicsStatesSoA;
     int N = 0;
 
-    std::size_t addObject(const Transform2D &transform = {}, const Physics2DState &state = {}) {
-        transforms.push_back(transform);
-        physicsStates.push_back(state);
+    std::size_t addCircle(const Circle &circle, const Physics2DState &state = {}) {
+        circles.push_back(circle);
+
+        physicsStatesSoA.p.push_back(state.p);
+        physicsStatesSoA.v.push_back(state.v);
+        physicsStatesSoA.a.push_back(state.a);
+        physicsStatesSoA.theta.push_back(state.theta);
         return ++N;
     }
 
@@ -183,21 +216,14 @@ struct Physics2DWorld {
         float dt2 = dt * dt;
 
         for (std::size_t i = 0; i < N; ++i) {
-            const auto &a = physicsStates[i].a = glm::vec2(0.0f, -9.81f);
-            const auto &v = physicsStates[i].v += a * dt;
-            transforms[i].position += 0.5f * a * dt2 + v * dt;
+            const auto &a = physicsStatesSoA.a[i] = glm::vec2(0.0f, -9.81f);
+            const auto &v = physicsStatesSoA.v[i] += a * dt;
+            physicsStatesSoA.p[i] += 0.5f * a * dt2 + v * dt;
         }
-
     }
 
     void updatePhysics(float dt) {
-        assert(transforms.size() == N);
         updatePhysicsStates(dt);
-    }
-
-    void loadTransformsToGPUBuffer(const gl::Buffer &buffer) const {
-        buffer.bind();
-        buffer.setData(transforms.size() * sizeof(Transform2D), transforms.data());
     }
 };
 
@@ -265,9 +291,22 @@ int main(void) {
     Vbo.bind();
     layout.set(gl::BufferLayout::Aggregate<Vertex, float>());
 
-    gl::Buffer transformVbo(GL_ARRAY_BUFFER);
-    transformVbo.bind();
+    gl::Buffer instancePosVbo(GL_ARRAY_BUFFER);
+    instancePosVbo.bind();
+
+#if SOA_TRANSFORM
+    layout.set<float>(0, 2, 2, 1);
+
+    gl::Buffer instanceScaleVbo(GL_ARRAY_BUFFER);
+    instanceScaleVbo.bind();
+    layout.set<float>(0, 2, 2, 1);
+
+    gl::Buffer instanceAngleVbo(GL_ARRAY_BUFFER);
+    instanceAngleVbo.bind();
+    layout.set<float>(0, 2, 2, 1);
+#else
     layout.set(gl::BufferLayout::Aggregate<Transform2D, float>(), 1);
+#endif
 
     // Expliclty tells Vao the layout of the data we stored into Vbo.
     // Vao contains the info of VBOs and their corresponding attribute (or layout).
@@ -313,19 +352,6 @@ int main(void) {
     // Texture
     //
 
-    gl::Texture2D texture;
-    texture.setSlot(0);
-    texture.bind();
-
-    texture.setWrapping(GL_REPEAT, GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR);
-
-    // Load image from CPU
-    {
-        auto cpuImage = Resources::LoadImage("/res/circle.png");
-        texture.genTexture(cpuImage);
-    }
-    // cpuImage will be freed automatically by its desctructor
-
     // 
     // 2D camrea creation
     //
@@ -337,7 +363,6 @@ int main(void) {
     //
 
     shaderProgram.use();
-    shaderProgram.setUniform1i("tex", texture.slot);
     shaderProgram.setUniformMat4("projection", camera.projection);
     shaderProgram.setUniform2f("camPos", camera.position);
 
@@ -349,7 +374,7 @@ int main(void) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // 
-    // Initialize instnaces' transform
+    // Initialize instnaces' circle
     //
 
     std::random_device rd;
@@ -357,7 +382,14 @@ int main(void) {
 
     std::uniform_real_distribution<float> dis(0.0f, 1.0f);
 
-    int N = 1'000'000;
+    int N = 3'000'000;
+
+#if SOA_TRANSFORM
+    Transform2DSoA transforms;
+#else
+    std::vector<Transform2D> transforms;
+    transforms.reserve(N);
+#endif
 
     Physics2DWorld physicsWorld;
 
@@ -378,7 +410,15 @@ int main(void) {
         y *= r;
 
         float u2 = dis(gen) * 0.005f;
-        physicsWorld.addObject({ { x, y }, u2 });
+
+        physicsWorld.addCircle({ { 0, 0 }, u2 }, { { x, y } });
+#if SOA_TRANSFORM
+        transforms.positions.push_back({ x, y });
+        transforms.scales.push_back({ u2, u2 });
+        transforms.angles.push_back(0.f);
+#else
+        transforms.push_back({ { x, y }, { u2, u2 }, 0.f });
+#endif
     }
 
     // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -387,24 +427,36 @@ int main(void) {
         glClear(GL_COLOR_BUFFER_BIT);
 
         { SCOPE_TIMER();
-            // Physics update and upload
             physicsWorld.updatePhysics(1.f / 120);
-            std::printf("%-30s", "updatePhysics");
-        }
-
-        for (size_t i = 0; i < N; ++i) {
-            if (physicsWorld.transforms[i].position.y < -3) {
-                physicsWorld.transforms[i].position.y += 4.3f;
-                physicsWorld.physicsStates[i].v = {};
-            }
+            std::printf("%-50s", "updatePhysics");
         }
 
         { SCOPE_TIMER();
-            physicsWorld.loadTransformsToGPUBuffer(transformVbo);
-            std::printf("%-30s", "loadTransformsToGPUBuffer");
+#if SOA_TRANSFORM
+            transforms.positions = physicsWorld.physicsStatesSoA.p;
+            transforms.angles = physicsWorld.physicsStatesSoA.theta;
+#else
+            for (std::size_t i = 0; i < N; ++i) {
+                transforms[i].position = physicsWorld.physicsStatesSoA.p[i];
+                transforms[i].angle = physicsWorld.physicsStatesSoA.theta[i];
+            }
+#endif
+            std::printf("%-50s", "physics state to instance buffer");
         }
 
-        texture.bind();
+        { SCOPE_TIMER();
+            instancePosVbo.bind();
+#if SOA_TRANSFORM
+            instancePosVbo.setData(transforms.positions.size() * sizeof(glm::vec2), transforms.positions.data());
+            instanceScaleVbo.bind();
+            instanceScaleVbo.setData(transforms.scales.size() * sizeof(glm::vec2), transforms.scales.data());
+            instanceAngleVbo.bind();
+            instanceAngleVbo.setData(transforms.angles.size() * sizeof(float), transforms.angles.data());
+#else
+            instancePosVbo.setData(transforms.size() * sizeof(Transform2D), transforms.data());
+#endif
+            std::printf("%-50s", "loadTransformsToGPUBuffer");
+        }
 
         shaderProgram.use();
         layout.bind();
@@ -412,12 +464,12 @@ int main(void) {
         // glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, N); 
         { SCOPE_TIMER();
             glDrawElementsInstanced(GL_TRIANGLE_FAN, 6, GL_UNSIGNED_INT, (void*)0, N);
-            std::printf("%-30s", "glDrawElementsInstanced");
+            std::printf("%-50s", "glDrawElementsInstanced");
         }
 
         { SCOPE_TIMER();
             MainWindow::SwapBuffers();
-            std::printf("%-30s", "MainWindow::SwapBuffers");
+            std::printf("%-50s", "MainWindow::SwapBuffers");
         }
         glfwPollEvents();
     }
