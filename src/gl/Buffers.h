@@ -2,16 +2,17 @@
 
 #include <cstddef>
 #include <glad/gl.h> 
+#include <vector>
 
 namespace gl {
-    struct Buffer {
-        unsigned int id;
+    struct Buffers {
+        std::vector<unsigned int> ids;
         int target;
 
-        explicit Buffer(int target);
-        void initialize();
+        explicit Buffers(int target);
+        void initialize(int num);
 
-        void bind() const;
+        void bind(int index) const;
         void unbind() const;
         void setData(size_t bytes, const void *data, int usage = GL_STATIC_DRAW) const;
     };

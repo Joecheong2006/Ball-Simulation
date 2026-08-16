@@ -1,7 +1,9 @@
 #include "gl/ShaderProgram.h"
 
 namespace gl {
-    ShaderProgram::ShaderProgram() : id(glCreateProgram()) {}
+    void ShaderProgram::initialize() {
+        id = glCreateProgram();
+    }
 
     void ShaderProgram::attachShader(const Shader &shader) const {
         glAttachShader(id, shader.id);

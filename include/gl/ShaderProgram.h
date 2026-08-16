@@ -10,7 +10,8 @@
 
 namespace gl {
     struct ShaderProgram {
-        ShaderProgram();
+        ShaderProgram() = default;
+        void initialize();
 
         void attachShader(const Shader &shader) const;
         void link() const;

@@ -1,8 +1,10 @@
 #include "gl/Buffer.h"
-
+#include <assert.h>
 
 namespace gl {
-    Buffer::Buffer(int target) : target(target) {
+    Buffer::Buffer(int target): target(target) {}
+
+    void Buffer::initialize() {
         glGenBuffers(1, &id);
     }
 

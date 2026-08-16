@@ -17,6 +17,17 @@ public:
         inline static constexpr int value = sizeof...(AllowedTypes);
     };
 
+    template <typename T>
+    inline static constexpr int TypeIndex() {
+        return GetIndex<T, AllowedTypes...>::value;
+    }
+
+    template <typename T>
+    bool is() const { return type_id == TypeIndex<T>(); }
+
+    template <typename T>
+    T *cast() const { return reinterpret_cast<T *>(raw_ptr); }
+
 protected:
     template <typename Functor>
         auto Dispatch(Functor &&func) const {

@@ -5,8 +5,19 @@ add_library(SimulationLib STATIC
     Resources.cpp
 
     gl/Buffer.cpp
+    gl/Buffers.cpp
     gl/Shader.cpp
     gl/ShaderProgram.cpp
+
+    MainWindow.cpp
+    OrthoCamera.cpp
+    Transform2D.cpp
+
+    RenderMesh.cpp
+    RenderMaterial.cpp
+    TRS_BatchRenderer.cpp
+    TRS_BatchAoSRenderer.cpp
+    TRS_BatchSoARenderer.cpp
 
     ${CMAKE_SOURCE_DIR}/lib/stb_image/stb_image.cpp
 )
