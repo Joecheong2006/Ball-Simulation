@@ -1,11 +1,13 @@
 #include <benchmark/benchmark.h>
 
+#include <random>
 #include <vector>
 
 #include "glm/glm.hpp"
 #include "TaggedPointer.h"
 
 constexpr float PI = 3.14159265358979323846f;
+
 
 struct CircleTagged {
     float radius{};
@@ -23,10 +25,6 @@ struct ShapeTagged : public TaggedPointer<CircleTagged, SquareTagged> {
         return Dispatch([](auto *obj) {
                     return obj->getArea();
                 });
-    }
-
-    inline ShapeTagged *operator->() {
-        return this;
     }
 };
 
@@ -52,12 +50,16 @@ static void BM_DynamicDispatch_TaggedPointer(benchmark::State& state) {
     std::vector<ShapeTagged> tagged_shapes;
     tagged_shapes.reserve(size);
 
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+
     for (auto i = 0; i < size; ++i)
-        tagged_shapes.emplace_back(new CircleTagged{1});
+        tagged_shapes.emplace_back(new CircleTagged{dis(gen)});
 
     for (auto _ : state) {
         for (auto &shape : tagged_shapes) {
-            benchmark::DoNotOptimize(shape->getArea());
+            benchmark::DoNotOptimize(shape.getArea());
         }
         benchmark::DoNotOptimize(tagged_shapes);
         benchmark::ClobberMemory();
@@ -71,8 +73,12 @@ static void BM_DynamicDispatch_Virtual(benchmark::State& state) {
     std::vector<ShapeVirtual*> virtual_shapes;
     virtual_shapes.reserve(size);
 
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+
     for (auto i = 0; i < size; ++i)
-        virtual_shapes.emplace_back(new CircleVirtual{1.0});
+        virtual_shapes.emplace_back(new CircleTagged{dis(gen)});
 
     for (auto _ : state) {
         for (auto &shape : virtual_shapes) {
