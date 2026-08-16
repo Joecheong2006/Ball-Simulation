@@ -14,7 +14,7 @@ void TRS_BatchSoARenderer::bindRenderMesh(RenderMesh &renderMesh) {
     renderMesh.layout.set({ GL_FLOAT, 0, 2, 2, 1 });
 
     buffers.bind(2);
-    renderMesh.layout.set({ GL_FLOAT, 0, 2, 2, 1 });
+    renderMesh.layout.set({ GL_FLOAT, 0, 1, 1, 1 });
 }
 
 void TRS_BatchSoARenderer::submit(const Transform2D &transform) {
