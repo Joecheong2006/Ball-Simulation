@@ -78,7 +78,7 @@ static void BM_DynamicDispatch_Virtual(benchmark::State& state) {
     std::uniform_real_distribution<float> dis(0.0f, 1.0f);
 
     for (auto i = 0; i < size; ++i)
-        virtual_shapes.emplace_back(new CircleTagged{dis(gen)});
+        virtual_shapes.emplace_back(new CircleVirtual{dis(gen)});
 
     for (auto _ : state) {
         for (auto &shape : virtual_shapes) {
