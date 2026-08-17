@@ -1,10 +1,13 @@
 #include "TRS_BatchSoARenderer.h"
+#include "profiling.h"
 
 void TRS_BatchSoARenderer::initialize() {
+    ZoneScoped;
     buffers.initialize(3);
 }
 
 void TRS_BatchSoARenderer::bindRenderMesh(RenderMesh &renderMesh) {
+    ZoneScoped;
     renderMesh.layout.bind();
 
     buffers.bind(0);
@@ -18,14 +21,17 @@ void TRS_BatchSoARenderer::bindRenderMesh(RenderMesh &renderMesh) {
 }
 
 void TRS_BatchSoARenderer::submit(const Transform2D &transform) {
+    ZoneScoped;
     batch.add(transform);
 }
 
 void TRS_BatchSoARenderer::submitBatch(Transform2D::Container &transforms) {
+    ZoneScoped;
     batch.append(transforms);
 }
 
 void TRS_BatchSoARenderer::render(RenderMesh &renderMesh, RenderMaterial &renderMat) {
+    ZoneScoped;
     buffers.bind(0);
     buffers.setData(batch.positions.size() * sizeof(glm::vec2), batch.positions.data());
     buffers.bind(1);

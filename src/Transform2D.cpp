@@ -1,6 +1,8 @@
 #include "Transform2D.h"
+#include "profiling.h"
 
 glm::mat4 Transform2D::toMat4() {
+    ZoneScoped;
     float c = std::cos(angle);
     float s = std::sin(angle);
     glm::mat4 m(1.0f);
@@ -12,6 +14,7 @@ glm::mat4 Transform2D::toMat4() {
 
 
 void Transform2D::SoA::append(const SoA *transforms) {
+    ZoneScoped;
     const int size = static_cast<int>(positions.size());
     const int diff = static_cast<int>(transforms->positions.size());
 
@@ -30,6 +33,7 @@ void Transform2D::SoA::append(const SoA *transforms) {
 }
 
 void Transform2D::SoA::append(const Container &transforms) {
+    ZoneScoped;
     if (transforms.is<Transform2D::SoA>()) {
         this->append(transforms.cast<Transform2D::SoA>());
     }
@@ -38,6 +42,7 @@ void Transform2D::SoA::append(const Container &transforms) {
 
 
 void Transform2D::AoS::append(const AoS *transforms) {
+    ZoneScoped;
     const int size = static_cast<int>(this->transforms.size());
     const int diff = static_cast<int>(transforms->transforms.size());
 
@@ -47,6 +52,7 @@ void Transform2D::AoS::append(const AoS *transforms) {
 }
 
 void Transform2D::AoS::append(const Container &transforms) {
+    ZoneScoped;
     if (transforms.is<Transform2D::AoS>()) {
         this->append(transforms.cast<Transform2D::AoS>());
     }

@@ -2,10 +2,10 @@
 
 #include <glad/gl.h> 
 #include <GLFW/glfw3.h>
-#include <string>
+#include <string_view>
 
 struct MainWindow {
-    static void Initialize(int width, int height, const std::string &title);
+    static void Initialize(int width, int height, std::string_view title);
     static bool ShouldClose();
     static void SwapBuffers();
     static int Width() { return mw.width; }

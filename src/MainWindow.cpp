@@ -1,12 +1,14 @@
 #include "MainWindow.h"
+#include "profiling.h"
 
 #include <assert.h>
 #include <iostream>
 
 MainWindow MainWindow::mw = MainWindow();
 
-void MainWindow::Initialize(int width, int height, const std::string &title) {
-    mw.glfwWindow = glfwCreateWindow(width, height, "", NULL, NULL);
+void MainWindow::Initialize(int width, int height, std::string_view title) {
+    ZoneScoped;
+    mw.glfwWindow = glfwCreateWindow(width, height, title.data(), NULL, NULL);
     assert(mw.glfwWindow);
     glfwMakeContextCurrent(mw.glfwWindow);
 
@@ -25,9 +27,11 @@ void MainWindow::Initialize(int width, int height, const std::string &title) {
 }
 
 bool MainWindow::ShouldClose() {
+    ZoneScoped;
     return glfwWindowShouldClose(mw.glfwWindow);
 }
 
 void MainWindow::SwapBuffers() {
+    ZoneScoped;
     glfwSwapBuffers(mw.glfwWindow);
 }

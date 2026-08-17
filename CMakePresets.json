@@ -8,9 +8,23 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
                 "BUILD_BENCHMARKS": "OFF",
+                "TRACY_ENABLE": "ON",
                 "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_CMAKE}",
                 "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/build/bin-${presetName}",
                 "CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG": "${sourceDir}/build/bin-${presetName}"
+            }
+        },
+        {
+            "name": "dev",
+            "displayName": "Development Mode",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_BENCHMARKS": "ON",
+                "TRACY_ENABLE": "ON",
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_CMAKE}",
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY": "${sourceDir}/build/bin-${presetName}",
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE": "${sourceDir}/build/bin-${presetName}"
             }
         },
         {
@@ -32,6 +46,7 @@
             "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
+                "TRACY_ENABLE": "ON",
                 "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_CMAKE}",
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
             }
@@ -42,6 +57,12 @@
             "name": "debug",
             "configurePreset": "debug",
             "configuration": "Debug",
+            "targets": [ "Simulation" ]
+        },
+        {
+            "name": "dev",
+            "configurePreset": "dev",
+            "configuration": "Release",
             "targets": [ "Simulation" ]
         },
         {

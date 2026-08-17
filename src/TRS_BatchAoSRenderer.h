@@ -9,6 +9,7 @@
 struct TRS_BatchAoSRenderer {
     Transform2D::AoS batch;
     gl::Buffer buffer;
+    RenderMesh *renderMesh{};
 
     glm::vec2 cachedCameraPosition;
     glm::mat4 cachedCameraProjection;

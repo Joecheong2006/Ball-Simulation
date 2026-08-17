@@ -1,4 +1,4 @@
-#include <iostream>
+#include "profiling.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -9,21 +9,6 @@
 #include <string>
 #include <assert.h>
 #include <random>
-
-#include <chrono>
-
-struct ScopeTimer {
-    std::chrono::high_resolution_clock::time_point start
-        = std::chrono::high_resolution_clock::now();
-
-    ~ScopeTimer() {
-        auto elapsed = std::chrono::high_resolution_clock::now() - start;
-        std::cout << elapsed.count() * 1e-6 << "ms\n";
-    }
-
-};
-
-#define SCOPE_TIMER() ScopeTimer ____
 
 const char *vertexShaderSource = R"(
 #version 330 core
@@ -83,7 +68,6 @@ void main() {
 )";
 
 #include "gl/BufferLayout.h"
-#include "gl/ShaderProgram.h"
 
 #include "MainWindow.h"
 
@@ -108,6 +92,7 @@ struct Physics2DWorld {
     int N = 0;
 
     std::size_t addCircle(const Circle &circle, const Physics2DState &state = {}) {
+        ZoneScoped;
         circles.push_back(circle);
 
         physicsStates.p.push_back(state.p);
@@ -118,6 +103,7 @@ struct Physics2DWorld {
     }
 
     void updatePhysicsStates(float dt) {
+        ZoneScoped;
         float dt2 = dt * dt;
 
         for (std::size_t i = 0; i < N; ++i) {
@@ -128,6 +114,7 @@ struct Physics2DWorld {
     }
 
     void updatePhysics(float dt) {
+        ZoneScoped;
         updatePhysicsStates(dt);
     }
 };
@@ -147,7 +134,6 @@ struct Vertex {
     glm::vec2 position;
     glm::vec2 texCoord;
 };
-
 int main(void) {
     if (!glfwInit()) return -1;
 
@@ -257,38 +243,28 @@ int main(void) {
     }
 
     while (!MainWindow::ShouldClose()) {
+        FrameMark;
+
         glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         renderer.setCameraState(camera);
 
-        { SCOPE_TIMER();
-            physicsWorld.updatePhysics(1.f / 120);
-            std::printf("%-50s", "updatePhysics");
-        }
+        physicsWorld.updatePhysics(1.f / 120);
 
-        { SCOPE_TIMER();
+        { ZoneScopedN("Sync physics states");
             for (int i = 0; i < N; ++i) {
                 transforms.setPositionAt(i, physicsWorld.physicsStates.p[i]);
                 transforms.setAngleAt(i, physicsWorld.physicsStates.theta[i]);
             }
-            std::printf("%-50s", "Sync physics states");
         }
 
-        { SCOPE_TIMER();
-            renderer.submitBatch(transforms);
-            std::printf("%-50s", "renderer.submitBatch(transforms)");
-        }
+        FrameMarkStart("Render");
+        renderer.submitBatch(transforms);
+        renderer.render(renderMesh, renderMat);
+        FrameMarkStart("End");
 
-        { SCOPE_TIMER();
-            renderer.render(renderMesh, renderMat);
-            std::printf("%-50s", "renderer.render(renderMesh, renderMat)");
-        }
-
-        { SCOPE_TIMER();
-            MainWindow::SwapBuffers();
-            std::printf("%-50s", "MainWindow::SwapBuffers");
-        }
+        MainWindow::SwapBuffers();
         glfwPollEvents();
     }
 

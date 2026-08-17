@@ -1,10 +1,14 @@
 #include "TRS_BatchAoSRenderer.h"
+#include "profiling.h"
 
 void TRS_BatchAoSRenderer::initialize() {
+    ZoneScoped;
     buffer.initialize();
 }
 
 void TRS_BatchAoSRenderer::bindRenderMesh(RenderMesh &renderMesh) {
+    ZoneScoped;
+    this->renderMesh = &renderMesh;
     renderMesh.layout.bind();
 
     buffer.bind();
@@ -12,14 +16,17 @@ void TRS_BatchAoSRenderer::bindRenderMesh(RenderMesh &renderMesh) {
 }
 
 void TRS_BatchAoSRenderer::submit(const Transform2D &transform) {
+    ZoneScoped;
     batch.add(transform);
 }
 
 void TRS_BatchAoSRenderer::submitBatch(Transform2D::Container &transforms) {
+    ZoneScoped;
     batch.append(transforms);
 }
 
 void TRS_BatchAoSRenderer::render(RenderMesh &renderMesh, RenderMaterial &renderMat) {
+    ZoneScoped;
     buffer.bind();
     buffer.setData(batch.transforms.size() * sizeof(Transform2D), batch.transforms.data());
 

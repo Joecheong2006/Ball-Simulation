@@ -1,22 +1,27 @@
 #include "Resources.h"
+#include "profiling.h"
+
 #include "stb_image/stb_image.h"
 #include <string>
 
 namespace Resources {
     Image::~Image() {
+        ZoneScoped;
         if (data) {
             FreeImage(*this);
         }
     }
 
     Image::Image(Image &&rhs)
-        : data(rhs.data), desc(rhs.desc)
+        : desc(rhs.desc), data(rhs.data)
     {
+        ZoneScoped;
         rhs.data = nullptr;
         rhs.desc = ImageDescriptor{};
     }
 
     Image &Image::operator=(Image &&rhs) {
+        ZoneScoped;
         if (this == &rhs) {
             return *this;
         }
@@ -35,10 +40,12 @@ namespace Resources {
     }
 
     void FreeImage(Image &image) {
+        ZoneScoped;
         stbi_image_free(image.data);
     }
 
     Image LoadImage(std::string_view path) {
+        ZoneScoped;
         std::string real_path;
         real_path.reserve(Resources::root.size() + path.size());
         real_path.append(Resources::root);

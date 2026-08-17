@@ -1,8 +1,11 @@
 #include "RenderMesh.h"
 
+#include "profiling.h"
+
 RenderMesh::RenderMesh(MeshData &meshData)
     : Vbo(GL_ARRAY_BUFFER), Ebo(GL_ELEMENT_ARRAY_BUFFER)
 {
+    ZoneScoped;
     auto &vertexAttributes = meshData.vertexAttributes;
     auto &vertex = meshData.vertex;
     auto &indices = meshData.indices;

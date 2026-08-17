@@ -1,5 +1,7 @@
 #pragma once
 
+#include "profiling.h"
+
 #include "aggreate.h"
 
 #include <vector>
@@ -29,18 +31,22 @@ namespace gl {
         BufferLayout() = default;
 
         void initialize() {
+            ZoneScoped;
             glGenVertexArrays(1, &Vao);
         }
 
         void bind() const {
+            ZoneScoped;
             glBindVertexArray(Vao);
         }
 
         void unbind() const {
+            ZoneScoped;
             glBindVertexArray(0);
         }
 
         void setDivisor(int divisor) const {
+            ZoneScoped;
             glVertexAttribDivisor(currentLocation, divisor);
         }
 
@@ -60,16 +66,19 @@ namespace gl {
             Struct(const std::initializer_list<int> &itemsCount, int divisor = 0)
                 : itemsCount(itemsCount), divisor(divisor)
             {
+                ZoneScoped;
                 stride = std::reduce(itemsCount.begin(), itemsCount.end(), 0);
             }
 
             Struct(const std::vector<int> &itemsCount, int divisor = 0)
                 : itemsCount(itemsCount), divisor(divisor)
             {
+                ZoneScoped;
                 stride = std::reduce(itemsCount.begin(), itemsCount.end(), 0);
             }
 
             Attributes getAttributes() const {
+                ZoneScoped;
                 Attributes attributes;
                 int offset = 0;
                 for (auto &count : itemsCount) {
@@ -82,7 +91,7 @@ namespace gl {
 
         template <typename T, typename BaseType>
         struct Aggregate : public Struct<BaseType> {
-            Aggregate(int divisor = 0)
+            explicit Aggregate(int divisor = 0)
                 : Struct<BaseType>([]() {
                                        auto itemsByte = aggregate::get_field_sizes<T>();
                                        for (auto &e : itemsByte) {
@@ -95,6 +104,7 @@ namespace gl {
 
         template <typename BaseType>
         void set(const Struct<BaseType> &structLayout) {
+            ZoneScoped;
             Attributes attributes = structLayout.getAttributes();
             for (auto &attri : attributes) {
                 set(attri);
@@ -102,12 +112,14 @@ namespace gl {
         }
 
         void set(const Attributes &attributes) {
+            ZoneScoped;
             for (auto &attri : attributes) {
                 set(attri);
             }
         }
 
         void set(const Attribute &attri) {
+            ZoneScoped;
             const auto &[type, offset, size, stride, divisor] = attri;
             const int type_size = detail::get_type_size(type);
 
