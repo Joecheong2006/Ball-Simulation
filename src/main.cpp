@@ -262,7 +262,7 @@ int main(void) {
         FrameMarkStart("Render");
         renderer.submitBatch(transforms);
         renderer.render(renderMesh, renderMat);
-        FrameMarkStart("End");
+        FrameMarkEnd("Render");
 
         MainWindow::SwapBuffers();
         glfwPollEvents();
