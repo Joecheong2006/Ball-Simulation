@@ -4,17 +4,24 @@
 
 #include <cstddef>
 #include <glad/gl.h> 
+#include <string_view>
 
 namespace gl {
     struct Shader {
-        unsigned int id;
+    private:
+        int type;
+        unsigned int id{};
+        std::string_view sourceView;
 
-        Shader(int type, const char *source);
+    public:
+        Shader(int type, std::string_view source);
         ~Shader();
+        void initialize();
 
         void compile() const;
-
         void del() const;
+
+        unsigned int getId() const { return id; }
 
         inline static void LogErrors(const Shader &shader) {
             int  success;

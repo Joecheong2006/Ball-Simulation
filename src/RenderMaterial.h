@@ -4,7 +4,9 @@
 
 struct RenderMaterial {
     gl::ShaderProgram shaderProgram;
+    gl::Shader vertex, fragment;
 
-    RenderMaterial(const gl::Shader &vertex, const gl::Shader &fragment);
+    RenderMaterial(gl::Shader vertex, gl::Shader fragment) noexcept;
+    void initialize();
 };
 

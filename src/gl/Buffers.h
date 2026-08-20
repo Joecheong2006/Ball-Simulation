@@ -5,11 +5,14 @@
 #include <vector>
 
 namespace gl {
-    struct Buffers {
+    class Buffers {
+    private:
         std::vector<unsigned int> ids;
-        int target;
+        int target{};
 
+    public:
         explicit Buffers(int target);
+        ~Buffers();
         void initialize(int num);
 
         void bind(int index) const;

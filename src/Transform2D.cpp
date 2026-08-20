@@ -12,7 +12,6 @@ glm::mat4 Transform2D::toMat4() {
     return m;
 }
 
-
 void Transform2D::SoA::append(const SoA *transforms) {
     ZoneScoped;
     const int size = static_cast<int>(positions.size());
@@ -57,4 +56,56 @@ void Transform2D::AoS::append(const Container &transforms) {
         this->append(transforms.cast<Transform2D::AoS>());
     }
     assert(true);
+}
+
+Transform2D::Container::Container() noexcept
+    : TaggedPointer(new Transform2D::SoA)
+{}
+
+void Transform2D::Container::add(const Transform2D &transform) {
+    Dispatch([&transform](auto *obj) {
+            obj->add(transform);
+        });
+}
+
+void Transform2D::Container::append(const Container &transforms) {
+    Dispatch([&transforms](auto *obj) {
+            obj->append(transforms);
+        });
+}
+
+int Transform2D::Container::size() const {
+    return Dispatch([&](auto *obj) {
+            return obj->size();
+        });
+}
+
+glm::vec2 Transform2D::Container::getPositionAt(int i) const {
+    return Dispatch([&](auto *obj) {
+            return obj->getPositionAt(i);
+        });
+}
+
+float Transform2D::Container::getAngleAt(int i) const {
+    return Dispatch([&](auto *obj) {
+            return obj->getAngleAt(i);
+        });
+}
+
+void Transform2D::Container::setPositionAt(int i, glm::vec2 position) {
+    Dispatch([&i, &position](auto *obj) {
+            obj->setPositionAt(i, position);
+        });
+}
+
+void Transform2D::Container::setAngleAt(int i, float angle) {
+    Dispatch([&i, &angle](auto *obj) {
+            obj->setAngleAt(i, angle);
+        });
+}
+
+void Transform2D::Container::clear() {
+    Dispatch([](auto *obj) {
+            obj->clear();
+        });
 }

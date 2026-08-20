@@ -4,6 +4,11 @@
 namespace gl {
     Buffers::Buffers(int target): target(target) {}
 
+    Buffers::~Buffers() {
+        if (!ids.empty())
+            glDeleteBuffers(static_cast<int>(ids.size()), ids.data());
+    };
+
     void Buffers::initialize(int num) {
         ZoneScoped;
         ids.resize(num);

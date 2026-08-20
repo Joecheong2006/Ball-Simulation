@@ -1,12 +1,9 @@
-#include "profiling.h"
-
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include "stb_image/stb_image.h"
 
 #include <vector>
-#include <string>
 #include <assert.h>
 #include <random>
 
@@ -15,9 +12,9 @@ const char *vertexShaderSource = R"(
 layout (location = 0) in vec2 aPos;
 layout (location = 1) in vec2 aTexCoord;
 
-layout (location = 2) in vec2 aInstancePos;
-layout (location = 3) in vec2 aInstanceScale;
-layout (location = 4) in float aInstanceAngle;
+layout (location = 10) in vec2 aInstancePos;
+layout (location = 11) in vec2 aInstanceScale;
+layout (location = 12) in float aInstanceAngle;
 
 out vec2 TexCoord;
 
@@ -122,18 +119,19 @@ struct Physics2DWorld {
 struct World {
 };
 
-#include "MeshData.h"
 #include "RenderMesh.h"
 #include "RenderMaterial.h"
 
-#include "TRS_BatchSoARenderer.h"
-#include "TRS_BatchAoSRenderer.h"
-#include "TRS_BatchRenderer.h"
+#include "OrthoCamera.h"
 
 struct Vertex {
     glm::vec2 position;
     glm::vec2 texCoord;
 };
+
+#include "RenderObjects.h"
+#include "Renderer.h"
+
 int main(void) {
     if (!glfwInit()) return -1;
 
@@ -163,33 +161,42 @@ int main(void) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     //
-    // Define mesh data and its layout
+    // Initialzie RenderObjects
     //
 
-    MeshData meshData = {
-        {   // Positions  // Texture coords
-             0.5f,  0.5f,  1.0f, 1.0f,
-             0.5f, -0.5f,  1.0f, 0.0f,
-            -0.5f, -0.5f,  0.0f, 0.0f,
-            -0.5f,  0.5f,  0.0f, 1.0f,
-        },
-        gl::BufferLayout::Aggregate<Vertex, float>().getAttributes(),
-        {
-            0, 1, 3,   // first triangle
-            1, 2, 3    // second triangle
-        },
-    };
+    RenderObjects renderObjects;
 
-    RenderMesh renderMesh(meshData);
+    int meshId = renderObjects.addRenderMeshInitializer([]() {
+            return RenderMesh({
+                {   // Positions  // Texture coords
+                     0.5f,  0.5f,  1.0f, 1.0f,
+                     0.5f, -0.5f,  1.0f, 0.0f,
+                    -0.5f, -0.5f,  0.0f, 0.0f,
+                    -0.5f,  0.5f,  0.0f, 1.0f,
+                },
+                {
+                    0, 1, 3,   // first triangle
+                    1, 2, 3    // second triangle
+                },
+                gl::BufferLayout::Aggregate<Vertex>().getAttributes()
+            });
+        });
+
+    int matId = renderObjects.addRenderMaterialInitializer([]() {
+            return RenderMaterial(
+                { GL_VERTEX_SHADER, vertexShaderSource },
+                { GL_FRAGMENT_SHADER, fragmentShaderSource }
+            );
+        });
+
+    renderObjects.initialize();
 
     //
-    // Shader Program
+    // Initialzie Renderer
     //
 
-    RenderMaterial renderMat(
-            { GL_VERTEX_SHADER, vertexShaderSource },
-            { GL_FRAGMENT_SHADER, fragmentShaderSource }
-        );
+    Renderer renderer;
+    renderer.initialize(std::move(renderObjects));
 
     // 
     // 2D camrea creation
@@ -201,18 +208,15 @@ int main(void) {
     // Initialize instnaces' circle
     //
 
-    Transform2D::Container transforms(new Transform2D::SoA);
-    TRS_BatchRenderer renderer(new TRS_BatchSoARenderer());
-    renderer.initialize();
-    renderer.bindRenderMesh(renderMesh);
+    Transform2D::Container transforms{};
 
     // 
     // Setup physics world demo
     //
 
-    Physics2DWorld physicsWorld;
+    Physics2DWorld physicsWorld{};
 
-    std::random_device rd;
+    std::random_device rd{};
     std::mt19937 gen(rd());
 
     std::uniform_real_distribution<float> dis(0.0f, 1.0f);
@@ -248,8 +252,6 @@ int main(void) {
         glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        renderer.setCameraState(camera);
-
         physicsWorld.updatePhysics(1.f / 120);
 
         { ZoneScopedN("Sync physics states");
@@ -260,8 +262,8 @@ int main(void) {
         }
 
         FrameMarkStart("Render");
-        renderer.submitBatch(transforms);
-        renderer.render(renderMesh, renderMat);
+        renderer.submitBatch(meshId, matId, transforms);
+        renderer.render(camera);
         FrameMarkEnd("Render");
 
         MainWindow::SwapBuffers();

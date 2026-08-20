@@ -3,11 +3,14 @@
 #include <cstddef>
 #include <glad/gl.h> 
 
+#include "Resources.h"
+
 namespace gl {
     struct Texture2D {
-        unsigned int id;
-        int slot = 0;
+    private:
+        unsigned int id{};
 
+    public:
         Texture2D(const Texture2D&) = delete;
         Texture2D &operator=(const Texture2D&) = delete;
 

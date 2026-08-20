@@ -4,11 +4,14 @@
 #include <glad/gl.h> 
 
 namespace gl {
-    struct Buffer {
-        unsigned int id;
+    class Buffer {
+    private:
+        unsigned int id{};
         int target;
 
+    public:
         explicit Buffer(int target);
+        ~Buffer();
         void initialize();
 
         void bind() const;

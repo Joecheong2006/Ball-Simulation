@@ -24,6 +24,10 @@ struct Transform2D {
             angles.push_back(transform.angle);
         }
 
+        int size() const {
+            return static_cast<int>(positions.size());
+        }
+
         inline glm::vec2 getPositionAt(int i) const {
             return positions[i];
         }
@@ -57,6 +61,10 @@ struct Transform2D {
             transforms.push_back(transform);
         }
 
+        int size() const {
+            return static_cast<int>(transforms.size());
+        }
+
         inline glm::vec2 getPositionAt(int i) const {
             return transforms[i].position;
         }
@@ -80,48 +88,18 @@ struct Transform2D {
 
     struct Container : public TaggedPointer<SoA, AoS> {
         using TaggedPointer::TaggedPointer;
-        void add(const Transform2D &transform) {
-            Dispatch([&transform](auto *obj) {
-                    obj->add(transform);
-                });
-        }
 
-        glm::vec2 getPositionAt(int i) const {
-            return Dispatch([&](auto *obj) {
-                    return obj->getPositionAt(i);
-                });
-        }
+        Container() noexcept;
 
-        float getAngleAt(int i) const {
-            return Dispatch([&](auto *obj) {
-                    return obj->getAngleAt(i);
-                });
-        }
+        void add(const Transform2D &transform);
+        void append(const Container &transforms);
 
-        void setPositionAt(int i, glm::vec2 position) {
-            Dispatch([&i, &position](auto *obj) {
-                    obj->setPositionAt(i, position);
-                });
-        }
-
-        void setAngleAt(int i, float angle) {
-            Dispatch([&i, &angle](auto *obj) {
-                    obj->setAngleAt(i, angle);
-                });
-        }
-
-        void append(const Container &transforms) {
-            Dispatch([&transforms](auto *obj) {
-                    obj->append(transforms);
-                });
-        }
-
-        void clear() {
-            Dispatch([](auto *obj) {
-                    obj->clear();
-                });
-        }
-
+        int size() const;
+        glm::vec2 getPositionAt(int i) const;
+        float getAngleAt(int i) const;
+        void setPositionAt(int i, glm::vec2 position);
+        void setAngleAt(int i, float angle);
+        void clear();
     };
 
 };

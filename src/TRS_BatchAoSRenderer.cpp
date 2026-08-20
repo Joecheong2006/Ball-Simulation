@@ -1,43 +1,48 @@
 #include "TRS_BatchAoSRenderer.h"
+
+#include "RenderMesh.h"
+#include "RenderMaterial.h"
+#include "OrthoCamera.h"
+#include "RenderObjects.h"
 #include "profiling.h"
 
-void TRS_BatchAoSRenderer::initialize() {
+void TRS_BatchAoSRenderer::initialize(const RenderMesh &renderMesh) {
     ZoneScoped;
     buffer.initialize();
-}
-
-void TRS_BatchAoSRenderer::bindRenderMesh(RenderMesh &renderMesh) {
-    ZoneScoped;
-    this->renderMesh = &renderMesh;
     renderMesh.layout.bind();
 
     buffer.bind();
-    renderMesh.layout.set(gl::BufferLayout::Aggregate<Transform2D, float>(1));
+
+    renderMesh.layout.set(gl::BufferLayout::Aggregate<Transform2D, float>(1), 10);
 }
 
-void TRS_BatchAoSRenderer::submit(const Transform2D &transform) {
+void TRS_BatchAoSRenderer::submit(int matId, const Transform2D &transform) {
     ZoneScoped;
-    batch.add(transform);
+    batches[matId].add(transform);
 }
 
-void TRS_BatchAoSRenderer::submitBatch(Transform2D::Container &transforms) {
+void TRS_BatchAoSRenderer::submitBatch(int matId, const Transform2D::Container &transforms) {
     ZoneScoped;
-    batch.append(transforms);
+    batches[matId].append(transforms);
 }
 
-void TRS_BatchAoSRenderer::render(RenderMesh &renderMesh, RenderMaterial &renderMat) {
+void TRS_BatchAoSRenderer::render(OrthoCamera &camera, RenderMesh &renderMesh, RenderObjects &renderObjects) {
     ZoneScoped;
-    buffer.bind();
-    buffer.setData(batch.transforms.size() * sizeof(Transform2D), batch.transforms.data());
+    for (auto &[matId, batch] : batches) {
+        buffer.bind();
+        buffer.setData(batch.transforms.size() * sizeof(Transform2D), batch.transforms.data());
 
-    renderMat.shaderProgram.use();
-    renderMesh.layout.bind();
+        auto &renderMat = renderObjects.getRenderMaterial(matId);
 
-    renderMat.shaderProgram.setUniformMat4("projection", cachedCameraProjection);
-    renderMat.shaderProgram.setUniform2f("camPos", cachedCameraPosition);
+        renderMat.shaderProgram.use();
+        renderMesh.layout.bind();
 
-    int size = static_cast<int>(batch.transforms.size());
-    glDrawElementsInstanced(GL_TRIANGLE_FAN, 6, GL_UNSIGNED_INT, (void*)0, size);
+        renderMat.shaderProgram.setUniform2f("camPos", camera.position);
+        renderMat.shaderProgram.setUniformMat4("projection", camera.projection);
 
-    batch.clear();
+        int size = static_cast<int>(batch.transforms.size());
+        glDrawElementsInstanced(GL_TRIANGLE_FAN, 6, GL_UNSIGNED_INT, (void*)0, size);
+
+        batch.clear();
+    }
 }

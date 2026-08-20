@@ -2,10 +2,13 @@
 
 #include "profiling.h"
 
-RenderMesh::RenderMesh(MeshData &meshData)
-    : Vbo(GL_ARRAY_BUFFER), Ebo(GL_ELEMENT_ARRAY_BUFFER)
+RenderMesh::RenderMesh(MeshData &&meshData) noexcept
+    : Vbo(GL_ARRAY_BUFFER), Ebo(GL_ELEMENT_ARRAY_BUFFER), meshData(std::move(meshData))
 {
     ZoneScoped;
+}
+
+void RenderMesh::initialize() {
     auto &vertexAttributes = meshData.vertexAttributes;
     auto &vertex = meshData.vertex;
     auto &indices = meshData.indices;

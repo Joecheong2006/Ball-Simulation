@@ -2,10 +2,20 @@
 
 #include "profiling.h"
 
-RenderMaterial::RenderMaterial(const gl::Shader &vertex, const gl::Shader &fragment) {
+RenderMaterial::RenderMaterial(gl::Shader vertex, gl::Shader fragment) noexcept
+    : vertex(vertex), fragment(fragment)
+{
+    ZoneScoped;
+}
+
+void RenderMaterial::initialize() {
     ZoneScoped;
     shaderProgram.initialize();
+
+    vertex.initialize();
     vertex.compile();
+
+    fragment.initialize();
     fragment.compile();
 
     shaderProgram.attachShader(vertex);

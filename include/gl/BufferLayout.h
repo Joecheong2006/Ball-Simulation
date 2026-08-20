@@ -25,10 +25,15 @@ namespace gl {
     }
 
     struct BufferLayout {
-        unsigned int Vao;
-        int currentLocation = 0;
+        unsigned int Vao{};
 
+    public:
         BufferLayout() = default;
+
+        ~BufferLayout() {
+            if (Vao)
+                glDeleteVertexArrays(1, &Vao);
+        }
 
         void initialize() {
             ZoneScoped;
@@ -43,11 +48,6 @@ namespace gl {
         void unbind() const {
             ZoneScoped;
             glBindVertexArray(0);
-        }
-
-        void setDivisor(int divisor) const {
-            ZoneScoped;
-            glVertexAttribDivisor(currentLocation, divisor);
         }
 
         struct Attribute {
@@ -89,7 +89,7 @@ namespace gl {
             }
         };
 
-        template <typename T, typename BaseType>
+        template <typename T, typename BaseType = float>
         struct Aggregate : public Struct<BaseType> {
             explicit Aggregate(int divisor = 0)
                 : Struct<BaseType>([]() {
@@ -103,22 +103,22 @@ namespace gl {
         };
 
         template <typename BaseType>
-        void set(const Struct<BaseType> &structLayout) {
+        void set(const Struct<BaseType> &structLayout, int start = 0) const {
             ZoneScoped;
             Attributes attributes = structLayout.getAttributes();
-            for (auto &attri : attributes) {
-                set(attri);
+            for (auto i = 0; i < attributes.size(); ++i) {
+                set(static_cast<int>(i) + start, attributes[i]);
             }
         }
 
-        void set(const Attributes &attributes) {
+        void set(const Attributes &attributes, int start = 0) const {
             ZoneScoped;
-            for (auto &attri : attributes) {
-                set(attri);
+            for (auto i = 0; i < attributes.size(); ++i) {
+                set(static_cast<int>(i) + start, attributes[i]);
             }
         }
 
-        void set(const Attribute &attri) {
+        static void set(int currentLocation, const Attribute &attri) {
             ZoneScoped;
             const auto &[type, offset, size, stride, divisor] = attri;
             const int type_size = detail::get_type_size(type);
@@ -126,8 +126,12 @@ namespace gl {
             glEnableVertexAttribArray(currentLocation);
             glVertexAttribPointer(currentLocation, size, type, GL_FALSE,
                     stride * type_size, (void*)(size_t)(offset * type_size));
-            setDivisor(divisor);
-            ++currentLocation;
+            setDivisor(currentLocation, divisor);
+        }
+
+        static void setDivisor(int currentLocation, int divisor) {
+            ZoneScoped;
+            glVertexAttribDivisor(currentLocation, divisor);
         }
     };
 

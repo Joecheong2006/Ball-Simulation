@@ -5,8 +5,7 @@
 
 struct MeshData {
     std::vector<float> vertex;
-    gl::BufferLayout::Attributes vertexAttributes;
-
     std::vector<uint32_t> indices;
+    gl::BufferLayout::Attributes vertexAttributes;
 };
 

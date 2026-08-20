@@ -1,31 +1,25 @@
 #pragma once
 
 #include "RenderMesh.h"
-#include "RenderMaterial.h"
 #include "Transform2D.h"
-#include "OrthoCamera.h"
 #include "gl/Buffers.h"
 
+#include <unordered_map>
+
+struct OrthoCamrea;
+class RenderObjects;
+
 struct TRS_BatchSoARenderer {
-    Transform2D::SoA batch;
+    std::unordered_map<int, Transform2D::SoA> batches;
     gl::Buffers buffers;
 
-    glm::vec2 cachedCameraPosition;
-    glm::mat4 cachedCameraProjection;
-
-    TRS_BatchSoARenderer()
+    TRS_BatchSoARenderer() noexcept
         : buffers(GL_ARRAY_BUFFER)
     {}
 
-    void setCameraState(OrthoCamera &camera) {
-        cachedCameraPosition = camera.position;
-        cachedCameraProjection = camera.projection;
-    }
-
-    void initialize();
-    void bindRenderMesh(RenderMesh &renderMesh);
-    void submit(const Transform2D &transform);
-    void submitBatch(Transform2D::Container &transforms);
-    void render(RenderMesh &renderMesh, RenderMaterial &renderMat);
+    void initialize(const RenderMesh &renderMesh);
+    void submit(int matId, const Transform2D &transform);
+    void submitBatch(int matId, const Transform2D::Container &transforms);
+    void render(OrthoCamera &camera, RenderMesh &renderMesh, RenderObjects &renderObjects);
 };
 

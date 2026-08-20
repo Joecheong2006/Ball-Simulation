@@ -11,6 +11,7 @@
 namespace gl {
     struct ShaderProgram {
         ShaderProgram() = default;
+        ~ShaderProgram();
         void initialize();
 
         void attachShader(const Shader &shader) const;
@@ -24,7 +25,7 @@ namespace gl {
         int getUniformLocation(const std::string &name);
 
     private:
-        unsigned int id;
+        unsigned int id{};
         std::unordered_map<std::string, int> m_uniform_location_cache;
 
     };

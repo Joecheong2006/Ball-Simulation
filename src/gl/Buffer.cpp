@@ -1,10 +1,13 @@
 #include "gl/Buffer.h"
 #include "profiling.h"
 
-#include <assert.h>
-
 namespace gl {
     Buffer::Buffer(int target): target(target) {}
+
+    Buffer::~Buffer() {
+        if (id)
+            glDeleteBuffers(1, &id);
+    };
 
     void Buffer::initialize() {
         ZoneScoped;

@@ -12,7 +12,10 @@ add_library(SimulationLib STATIC
 
     RenderMesh.cpp
     RenderMaterial.cpp
-    TRS_BatchRenderer.cpp
+    RenderObjects.cpp
+
+    Renderer.cpp
+    BatchRenderer.cpp
     TRS_BatchAoSRenderer.cpp
     TRS_BatchSoARenderer.cpp
 

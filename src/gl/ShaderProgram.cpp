@@ -7,9 +7,14 @@ namespace gl {
         id = glCreateProgram();
     }
 
+    ShaderProgram::~ShaderProgram() {
+        if (id)
+            glDeleteProgram(id);
+    }
+
     void ShaderProgram::attachShader(const Shader &shader) const {
         ZoneScoped;
-        glAttachShader(id, shader.id);
+        glAttachShader(id, shader.getId());
     }
 
     void ShaderProgram::link() const {
