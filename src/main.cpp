@@ -280,8 +280,8 @@ int main(void) {
                 circleTransforms.setAngleAt(i, physicsWorld.physicsStates.theta[i]);
             }
             for (auto i = 0; i < squareCount; ++i) {
-                transforms.setPositionAt(i, physicsWorld.physicsStates.p[i + squareCount]);
-                transforms.setAngleAt(i, physicsWorld.physicsStates.theta[i + squareCount]);
+                transforms.setPositionAt(i, physicsWorld.physicsStates.p[i + circleCount]);
+                transforms.setAngleAt(i, physicsWorld.physicsStates.theta[i + circleCount]);
             }
         }
 
