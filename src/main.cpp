@@ -7,6 +7,11 @@
 #include <assert.h>
 #include <random>
 
+constexpr float pi = 3.141592f;
+
+// 
+// TODO: make vertex shader generic
+//
 const char *vertexShaderSource = R"(
 #version 330 core
 layout (location = 10) in vec2 aInstancePos;
@@ -86,6 +91,10 @@ struct Circle {
     float radius;
 };
 
+struct Square {
+    glm::vec2 size;
+};
+
 struct Physics2DState {
     glm::vec2 p, v, a;
     float theta;
@@ -98,18 +107,29 @@ struct Physics2DStates {
 
 struct Physics2DWorld {
     std::vector<Circle> circles;
+    std::vector<Square> squares;
     Physics2DStates physicsStates;
     int N = 0;
 
-    std::size_t addCircle(const Circle &circle, const Physics2DState &state = {}) {
-        ZoneScoped;
-        circles.push_back(circle);
-
+    void addPhysicsState(const Physics2DState &state) {
         physicsStates.p.push_back(state.p);
         physicsStates.v.push_back(state.v);
         physicsStates.a.push_back(state.a);
         physicsStates.theta.push_back(state.theta);
-        return ++N;
+    }
+
+    void addCircle(const Circle &circle, const Physics2DState &state = {}) {
+        ZoneScoped;
+        circles.push_back(circle);
+        addPhysicsState(state);
+        ++N;
+    }
+
+    void addSquare(const Square &square, const Physics2DState &state = {}) {
+        ZoneScoped;
+        squares.push_back(square);
+        addPhysicsState(state);
+        ++N;
     }
 
     void updatePhysicsStates(float dt) {
@@ -145,6 +165,12 @@ struct Vertex {
 #include "RenderObjects.h"
 #include "Renderer.h"
 
+using FunctorGetRandom = glm::vec2(*)();
+Transform2D::Container randomCircles(int n, Physics2DWorld &physicsWorld, FunctorGetRandom getRandomPoint);
+Transform2D::Container randomSquares(int n, Physics2DWorld &physicsWorld, FunctorGetRandom getRandomPoint);
+
+glm::vec2 randomPointFromHeart();
+
 int main(void) {
     if (!glfwInit()) return -1;
 
@@ -179,7 +205,7 @@ int main(void) {
 
     RenderObjects renderObjects;
 
-    int meshId = renderObjects.addRenderMeshInitializer([]() {
+    int quatId = renderObjects.addRenderMeshInitializer([]() {
             return RenderMesh({
                 {   // Positions  // Texture coords
                      0.5f,  0.5f,  1.0f, 1.0f,
@@ -195,26 +221,14 @@ int main(void) {
             });
         });
 
-    int meshId2 = renderObjects.addRenderMeshInitializer([]() {
-            return RenderMesh({
-                {   // Positions  // Texture coords
-                     0.0f,  0.5f,  1.0f, 1.0f,
-                     0.5f, -0.5f,  1.0f, 0.0f,
-                    -0.5f, -0.5f,  0.0f, 0.0f,
-                },
-                {},
-                gl::BufferLayout::Aggregate<Vertex>().getAttributes()
-            });
-        });
-
-    int matId = renderObjects.addRenderMaterialInitializer([]() {
+    int circleMaterialId = renderObjects.addRenderMaterialInitializer([]() {
             return RenderMaterial(
                 { GL_VERTEX_SHADER, vertexShaderSource },
                 { GL_FRAGMENT_SHADER, fragmentShaderSource }
             );
         });
 
-    int matId2 = renderObjects.addRenderMaterialInitializer([]() {
+    int blueMaterialId = renderObjects.addRenderMaterialInitializer([]() {
             return RenderMaterial(
                 { GL_VERTEX_SHADER, vertexShaderSource },
                 { GL_FRAGMENT_SHADER, fragmentShaderSource2 }
@@ -237,46 +251,20 @@ int main(void) {
     OrthoCamera camera({ 0, 0 }, { 1.0f, 1.0f }, -1.0f, 1.0f);
 
     // 
-    // Initialize instnaces' circle
-    //
-
-    Transform2D::Container transforms{};
-
-    // 
     // Setup physics world demo
     //
 
     Physics2DWorld physicsWorld{};
 
-    std::random_device rd{};
-    std::mt19937 gen(rd());
+    // 
+    // Initialize instnaces' circle
+    //
 
-    std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+    int circleCount = 1000;
+    Transform2D::Container circleTransforms = randomCircles(circleCount, physicsWorld, randomPointFromHeart);
 
-    int N = 1'000'000;
-
-    for (std::size_t i = 0; i < N; ++i) {
-        float u1 = dis(gen) * 2.0f * 3.14156f;
-
-        float x = 16.f * std::pow(sin(u1), 3.f);
-        float y = 13.f * cos(u1) - 5.f * cos(2.f * u1) - 2.f * cos(3.f * u1) - cos(4.f * u1);
-
-        float scale = 0.06f;
-
-        x *= scale;
-        y *= scale;
-
-        float r = dis(gen);
-
-        x *= r;
-        y *= r;
-
-        float u2 = dis(gen) * 0.005f;
-
-        physicsWorld.addCircle({ { 0, 0 }, u2 }, { { x, y } });
-        Transform2D transform = { { x, y }, { u2, u2 }, 0.f };
-        transforms.add(transform);
-    }
+    int squareCount = 500;
+    Transform2D::Container transforms = randomSquares(squareCount, physicsWorld, randomPointFromHeart);
 
     while (!MainWindow::ShouldClose()) {
         FrameMark;
@@ -287,22 +275,19 @@ int main(void) {
         physicsWorld.updatePhysics(1.f / 1200);
 
         { ZoneScopedN("Sync physics states");
-            for (auto i = 0; i < N / 2; ++i) {
-                transforms.setPositionAt(i, physicsWorld.physicsStates.p[i]);
-                transforms.setAngleAt(i, physicsWorld.physicsStates.theta[i]);
+            for (auto i = 0; i < circleCount; ++i) {
+                circleTransforms.setPositionAt(i, physicsWorld.physicsStates.p[i]);
+                circleTransforms.setAngleAt(i, physicsWorld.physicsStates.theta[i]);
             }
-            renderer.submitBatch(meshId, matId, transforms, N / 2);
-
-            transforms.clear();
-            for (auto i = N / 2; i < N; ++i) {
-                transforms.setPositionAt(i - N / 2, physicsWorld.physicsStates.p[i]);
-                transforms.setAngleAt(i - N / 2, physicsWorld.physicsStates.theta[i]);
+            for (auto i = 0; i < squareCount; ++i) {
+                transforms.setPositionAt(i, physicsWorld.physicsStates.p[i + squareCount]);
+                transforms.setAngleAt(i, physicsWorld.physicsStates.theta[i + squareCount]);
             }
-            renderer.submitBatch(meshId2, matId2, transforms, N / 2);
         }
 
         FrameMarkStart("Render");
-        // renderer.submitBatch(meshId, matId, transforms);
+        renderer.submitBatch(quatId, blueMaterialId, transforms);
+        renderer.submitBatch(quatId, circleMaterialId, circleTransforms);
         renderer.render(camera);
         FrameMarkEnd("Render");
 
@@ -312,4 +297,61 @@ int main(void) {
 
     glfwTerminate();
     return 0;
+}
+
+static std::mt19937 gen(std::random_device{}());
+static std::uniform_real_distribution<float> dis(0.0f, 1.0f);
+
+glm::vec2 randomPointFromHeart() {
+    float u1 = dis(gen) * 2.0f * pi;
+
+    float x = 16.f * std::pow(sin(u1), 3.f);
+    float y = 13.f * cos(u1) - 5.f * cos(2.f * u1) - 2.f * cos(3.f * u1) - cos(4.f * u1);
+
+    float scale = 0.06f;
+
+    x *= scale;
+    y *= scale;
+
+    float r = dis(gen);
+
+    x *= r;
+    y *= r;
+
+    return { x, y };
+}
+
+Transform2D::Container randomCircles(int n, Physics2DWorld &physicsWorld, FunctorGetRandom getRandomPoint) {
+    Transform2D::Container transforms{};
+
+    for (int i = 0; i < n; ++i) {
+        glm::vec2 u = getRandomPoint();
+
+        float u2 = dis(gen) * 0.05f;
+
+        physicsWorld.addCircle({ { 0, 0 }, u2 }, { u });
+        Transform2D transform = { u, { u2, u2 }, 0.f };
+        transforms.add(transform);
+    }
+
+    return transforms;
+}
+
+Transform2D::Container randomSquares(int n, Physics2DWorld &physicsWorld, FunctorGetRandom getRandomPoint) {
+    Transform2D::Container transforms{};
+
+    for (int i = 0; i < n; ++i) {
+        glm::vec2 u = getRandomPoint();
+
+        float u1 = dis(gen) * 0.1f + 0.02f;
+        float u2 = dis(gen) * u1 + 0.01f;
+
+        float theta = dis(gen) * pi * 180.0f;
+
+        physicsWorld.addSquare({ { u1, u2 } }, { u, {}, {}, theta });
+        Transform2D transform = { u, { u1, u2 }, theta };
+        transforms.add(transform);
+    }
+
+    return transforms;
 }
