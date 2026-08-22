@@ -15,6 +15,13 @@ void BatchRenderer::initialize(const RenderMesh &renderMesh) {
         });
 }
 
+void BatchRenderer::bindLayout(const gl::BufferLayout &layout) const {
+    ZoneScoped;
+    Dispatch([&layout](auto *obj) {
+            obj->bindLayout(layout);
+        });
+}
+
 void BatchRenderer::submit(int matId, const Transform2D &transform) {
     ZoneScoped;
     Dispatch([&matId, &transform](auto *obj) {
@@ -36,9 +43,9 @@ void BatchRenderer::submitBatch(int matId, const Transform2D::Container &transfo
         });
 }
 
-void BatchRenderer::render(OrthoCamera &camera, RenderMesh &renderMesh, RenderObjects &renderObjects) {
+void BatchRenderer::render(int meshId, OrthoCamera &camera, RenderObjects &renderObjects) {
     ZoneScoped;
-    Dispatch([&camera, &renderMesh, &renderObjects](auto *obj) {
-            obj->render(camera, renderMesh, renderObjects);
+    Dispatch([&camera, &meshId, &renderObjects](auto *obj) {
+            obj->render(meshId, camera, renderObjects);
         });
 }

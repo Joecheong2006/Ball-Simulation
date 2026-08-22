@@ -29,3 +29,11 @@ void RenderMesh::initialize() {
     Vbo.setData(vertex.size() * sizeof(float), vertex.data());
     layout.set(vertexAttributes);
 }
+
+void RenderMesh::bindRendererLayout(const BatchRenderer &renderer) const {
+    renderer.bindLayout(layout);
+}
+
+void RenderMesh::activate() const {
+    layout.bind();
+}

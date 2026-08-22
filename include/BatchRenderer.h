@@ -2,11 +2,13 @@
 
 #include "TaggedPointer.h"
 #include "Transform2D.h"
+#include "gl/BufferLayout.h"
 
-struct RenderMesh;
 struct TRS_BatchSoARenderer;
 struct TRS_BatchAoSRenderer;
 struct OrthoCamera;
+
+class RenderMesh;
 class RenderObjects;
 
 struct BatchRenderer : TaggedPointer<TRS_BatchSoARenderer, TRS_BatchAoSRenderer> {
@@ -14,9 +16,10 @@ struct BatchRenderer : TaggedPointer<TRS_BatchSoARenderer, TRS_BatchAoSRenderer>
 
     BatchRenderer() noexcept;
     void initialize(const RenderMesh &renderMesh);
+    void bindLayout(const gl::BufferLayout &layout) const;
     void submit(int matId, const Transform2D &transform);
     void submitBatch(int matId, const Transform2D::Container &transforms);
     void submitBatch(int matId, const Transform2D::Container &transforms, int size);
-    void render(OrthoCamera &camera, RenderMesh &renderMesh, RenderObjects &renderObjects);
+    void render(int meshId, OrthoCamera &camera, RenderObjects &renderObjects);
 
 };

@@ -7,7 +7,10 @@ void Renderer::initialize(RenderObjects &&renderObjects) {
     ZoneScoped;
     int meshCount = renderObjects.getRenderMeshSize();
     for (int i = 0; i < meshCount; ++i) {
-        renderers.emplace_back().initialize(renderObjects.getRenderMesh(i));
+        const RenderMesh &renderMesh = renderObjects.getRenderMesh(i);
+        BatchRenderer &renderer = renderers.emplace_back();
+        renderer.initialize(renderMesh);
+        renderMesh.bindRendererLayout(renderer);
     }
 
     this->renderObjects = std::move(renderObjects);
@@ -31,7 +34,6 @@ void Renderer::submitBatch(int meshId, int matId, const Transform2D::Container &
 void Renderer::render(OrthoCamera &camera) {
     ZoneScoped;
     for (int i = 0; i < (int)renderers.size(); ++i) {
-        auto &renderMesh = renderObjects.getRenderMesh(i);
-        renderers[i].render(camera, renderMesh, renderObjects);
+        renderers[i].render(i, camera, renderObjects);
     }
 }

@@ -3,7 +3,7 @@
 
 #include "RenderMaterial.h"
 
-struct RenderMesh;
+class RenderMesh;
 class RenderObjects {
     using MeshInitializer = std::function<RenderMesh()>;
     std::vector<MeshInitializer> meshInitializers;
