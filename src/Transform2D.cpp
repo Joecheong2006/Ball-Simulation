@@ -12,50 +12,56 @@ glm::mat4 Transform2D::toMat4() {
     return m;
 }
 
-void Transform2D::SoA::append(const SoA *transforms) {
+void Transform2D::SoA::append(const SoA *transforms, int size) {
     ZoneScoped;
-    const int size = static_cast<int>(positions.size());
-    const int diff = static_cast<int>(transforms->positions.size());
-
-    positions.reserve(size + diff);
-    scales.reserve(size + diff);
-    angles.reserve(size + diff);
-
     positions.insert(positions.end(),
-            transforms->positions.begin(), transforms->positions.end());
+            transforms->positions.begin(), transforms->positions.begin() + size);
 
     scales.insert(scales.end(),
-            transforms->scales.begin(), transforms->scales.end());
+            transforms->scales.begin(), transforms->scales.begin() + size);
 
     angles.insert(angles.end(),
-            transforms->angles.begin(), transforms->angles.end());
+            transforms->angles.begin(), transforms->angles.begin() + size);
 }
 
 void Transform2D::SoA::append(const Container &transforms) {
     ZoneScoped;
     if (transforms.is<Transform2D::SoA>()) {
-        this->append(transforms.cast<Transform2D::SoA>());
+        auto *soa = transforms.cast<Transform2D::SoA>();
+        this->append(soa, soa->size());
     }
     assert(true); // Unkown container type
 }
 
-
-void Transform2D::AoS::append(const AoS *transforms) {
+void Transform2D::SoA::append(const Container &transforms, int size) {
     ZoneScoped;
-    const int size = static_cast<int>(this->transforms.size());
-    const int diff = static_cast<int>(transforms->transforms.size());
-
-    this->transforms.reserve(size + diff);
-    this->transforms.insert(this->transforms.end(),
-            transforms->transforms.begin(), transforms->transforms.end());
+    if (transforms.is<Transform2D::SoA>()) {
+        this->append(transforms.cast<Transform2D::SoA>(), size);
+    }
+    assert(true); // Unkown container type
 }
 
 void Transform2D::AoS::append(const Container &transforms) {
     ZoneScoped;
     if (transforms.is<Transform2D::AoS>()) {
-        this->append(transforms.cast<Transform2D::AoS>());
+        auto *aos = transforms.cast<Transform2D::AoS>();
+        this->append(aos, aos->size());
     }
     assert(true);
+}
+
+void Transform2D::AoS::append(const Container &transforms, int size) {
+    ZoneScoped;
+    if (transforms.is<Transform2D::AoS>()) {
+        this->append(transforms.cast<Transform2D::AoS>(), size);
+    }
+    assert(true);
+}
+
+void Transform2D::AoS::append(const AoS *transforms, int size) {
+    ZoneScoped;
+    this->transforms.insert(this->transforms.end(),
+            transforms->transforms.begin(), transforms->transforms.begin() + size);
 }
 
 Transform2D::Container::Container() noexcept
@@ -71,6 +77,12 @@ void Transform2D::Container::add(const Transform2D &transform) {
 void Transform2D::Container::append(const Container &transforms) {
     Dispatch([&transforms](auto *obj) {
             obj->append(transforms);
+        });
+}
+
+void Transform2D::Container::append(const Container &transforms, int size) {
+    Dispatch([&transforms, &size](auto *obj) {
+            obj->append(transforms, size);
         });
 }
 

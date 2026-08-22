@@ -9,12 +9,12 @@
 
 const char *vertexShaderSource = R"(
 #version 330 core
-layout (location = 0) in vec2 aPos;
-layout (location = 1) in vec2 aTexCoord;
-
 layout (location = 10) in vec2 aInstancePos;
 layout (location = 11) in vec2 aInstanceScale;
 layout (location = 12) in float aInstanceAngle;
+
+layout (location = 0) in vec2 aPos;
+layout (location = 1) in vec2 aTexCoord;
 
 out vec2 TexCoord;
 
@@ -61,6 +61,19 @@ void main() {
     else {
         FragColor = vec4(0);
     }
+}
+)";
+
+const char *fragmentShaderSource2 = R"(
+#version 330 core
+out vec4 FragColor;
+
+in vec2 TexCoord;
+
+uniform sampler2D tex;
+
+void main() {
+    FragColor = vec4(0.2, 0.5, 0.8, 1);
 }
 )";
 
@@ -182,10 +195,29 @@ int main(void) {
             });
         });
 
+    int meshId2 = renderObjects.addRenderMeshInitializer([]() {
+            return RenderMesh({
+                {   // Positions  // Texture coords
+                     0.0f,  0.5f,  1.0f, 1.0f,
+                     0.5f, -0.5f,  1.0f, 0.0f,
+                    -0.5f, -0.5f,  0.0f, 0.0f,
+                },
+                {},
+                gl::BufferLayout::Aggregate<Vertex>().getAttributes()
+            });
+        });
+
     int matId = renderObjects.addRenderMaterialInitializer([]() {
             return RenderMaterial(
                 { GL_VERTEX_SHADER, vertexShaderSource },
                 { GL_FRAGMENT_SHADER, fragmentShaderSource }
+            );
+        });
+
+    int matId2 = renderObjects.addRenderMaterialInitializer([]() {
+            return RenderMaterial(
+                { GL_VERTEX_SHADER, vertexShaderSource },
+                { GL_FRAGMENT_SHADER, fragmentShaderSource2 }
             );
         });
 
@@ -252,17 +284,25 @@ int main(void) {
         glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        physicsWorld.updatePhysics(1.f / 120);
+        physicsWorld.updatePhysics(1.f / 1200);
 
         { ZoneScopedN("Sync physics states");
-            for (int i = 0; i < N; ++i) {
+            for (auto i = 0; i < N / 2; ++i) {
                 transforms.setPositionAt(i, physicsWorld.physicsStates.p[i]);
                 transforms.setAngleAt(i, physicsWorld.physicsStates.theta[i]);
             }
+            renderer.submitBatch(meshId, matId, transforms, N / 2);
+
+            transforms.clear();
+            for (auto i = N / 2; i < N; ++i) {
+                transforms.setPositionAt(i - N / 2, physicsWorld.physicsStates.p[i]);
+                transforms.setAngleAt(i - N / 2, physicsWorld.physicsStates.theta[i]);
+            }
+            renderer.submitBatch(meshId2, matId2, transforms, N / 2);
         }
 
         FrameMarkStart("Render");
-        renderer.submitBatch(meshId, matId, transforms);
+        // renderer.submitBatch(meshId, matId, transforms);
         renderer.render(camera);
         FrameMarkEnd("Render");
 

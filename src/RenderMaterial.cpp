@@ -20,5 +20,9 @@ void RenderMaterial::initialize() {
 
     shaderProgram.attachShader(vertex);
     shaderProgram.attachShader(fragment);
+
+    vertex.del();
+    fragment.del();
+
     shaderProgram.link();
 }

@@ -29,6 +29,13 @@ void BatchRenderer::submitBatch(int matId, const Transform2D::Container &transfo
         });
 }
 
+void BatchRenderer::submitBatch(int matId, const Transform2D::Container &transforms, int size) {
+    ZoneScoped;
+    Dispatch([&matId, &transforms, &size](auto *obj) {
+            obj->submitBatch(matId, transforms, size);
+        });
+}
+
 void BatchRenderer::render(OrthoCamera &camera, RenderMesh &renderMesh, RenderObjects &renderObjects) {
     ZoneScoped;
     Dispatch([&camera, &renderMesh, &renderObjects](auto *obj) {

@@ -16,7 +16,8 @@ struct Transform2D {
         std::vector<float> angles;
 
         void append(const Container &transforms);
-        void append(const SoA *transforms);
+        void append(const Container &transforms, int size);
+        void append(const SoA *transforms, int size);
 
         inline void add(const Transform2D &transform) {
             positions.push_back(transform.position);
@@ -55,7 +56,8 @@ struct Transform2D {
         std::vector<Transform2D> transforms;
 
         void append(const Container &transforms);
-        void append(const AoS *transforms);
+        void append(const Container &transforms, int size);
+        void append(const AoS *transforms, int size);
 
         inline void add(const Transform2D &transform) {
             transforms.push_back(transform);
@@ -93,6 +95,7 @@ struct Transform2D {
 
         void add(const Transform2D &transform);
         void append(const Container &transforms);
+        void append(const Container &transforms, int size);
 
         int size() const;
         glm::vec2 getPositionAt(int i) const;

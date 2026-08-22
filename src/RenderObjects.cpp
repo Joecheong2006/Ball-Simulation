@@ -7,14 +7,16 @@
 
 void RenderObjects::initialize() {
     ZoneScoped;
+    meshes.reserve(meshInitializers.size());
     for (auto i = 0; i < meshInitializers.size(); ++i) {
-        auto &mesh = meshes.emplace_back(meshInitializers[i]());
-        mesh.initialize();
+        meshes.push_back(meshInitializers[i]());
+        meshes[i].initialize();
     }
 
+    materials.reserve(matInitializers.size());
     for (auto i = 0; i < matInitializers.size(); ++i) {
-        auto &mat = materials.emplace_back(matInitializers[i]());
-        mat.initialize();
+        materials.push_back(matInitializers[i]());
+        materials[i].initialize();
     }
 }
 

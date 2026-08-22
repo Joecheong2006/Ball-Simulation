@@ -12,6 +12,7 @@ public:
     void initialize(RenderObjects &&renderObjects);
     void submit(int meshId, int matId, const Transform2D &transform);
     void submitBatch(int meshId, int matId, const Transform2D::Container &transforms);
+    void submitBatch(int meshId, int matId, const Transform2D::Container &transforms, int size);
     void render(OrthoCamera &camera);
 
 };

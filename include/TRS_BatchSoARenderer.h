@@ -11,15 +11,15 @@ class RenderObjects;
 
 struct TRS_BatchSoARenderer {
     std::unordered_map<int, Transform2D::SoA> batches;
-    gl::Buffers buffers;
+    gl::Buffers buffers{GL_ARRAY_BUFFER};
+    void (*renderCall)(RenderMesh &renderMesh, int size);
 
-    TRS_BatchSoARenderer() noexcept
-        : buffers(GL_ARRAY_BUFFER)
-    {}
+    TRS_BatchSoARenderer() = default;
 
     void initialize(const RenderMesh &renderMesh);
     void submit(int matId, const Transform2D &transform);
     void submitBatch(int matId, const Transform2D::Container &transforms);
+    void submitBatch(int matId, const Transform2D::Container &transforms, int size);
     void render(OrthoCamera &camera, RenderMesh &renderMesh, RenderObjects &renderObjects);
 };
 

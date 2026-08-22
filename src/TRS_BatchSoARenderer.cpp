@@ -20,6 +20,24 @@ void TRS_BatchSoARenderer::initialize(const RenderMesh &renderMesh) {
 
     buffers.bind(2);
     renderMesh.layout.set(12, { GL_FLOAT, 0, 1, 1, 1 });
+
+    if (renderMesh.meshData.indices.size() > 0) {
+        renderCall = [](RenderMesh &renderMesh, int size) {
+            { ZoneScopedN("glDrawElementsInstanced");
+            glDrawElementsInstanced(GL_TRIANGLE_FAN,
+                    static_cast<int>(renderMesh.meshData.indices.size()), GL_UNSIGNED_INT, (void*)0, size);
+            }
+        };
+    }
+    else {
+        renderCall = [](RenderMesh &renderMesh, int size) {
+            { ZoneScopedN("glDrawArraysInstanced");
+            glDrawArraysInstanced(GL_TRIANGLE_FAN, 0,
+                    static_cast<int>(renderMesh.meshData.vertex.size()), size);
+            }
+        };
+    }
+
 }
 
 void TRS_BatchSoARenderer::submit(int matId, const Transform2D &transform) {
@@ -32,19 +50,25 @@ void TRS_BatchSoARenderer::submitBatch(int matId, const Transform2D::Container &
     batches[matId].append(transforms);
 }
 
+void TRS_BatchSoARenderer::submitBatch(int matId, const Transform2D::Container &transforms, int size) {
+    ZoneScoped;
+    batches[matId].append(transforms, size);
+}
+
 void TRS_BatchSoARenderer::render(OrthoCamera &camera, RenderMesh &renderMesh, RenderObjects &renderObjects) {
     ZoneScoped;
+
     for (auto &[matId, batch] : batches) {
         if (batch.size() == 0) {
             continue;
         }
 
         buffers.bind(0);
-        buffers.setData(batch.positions.size() * sizeof(glm::vec2), batch.positions.data());
+        buffers.setData(batch.size() * sizeof(glm::vec2), batch.positions.data());
         buffers.bind(1);
-        buffers.setData(batch.scales.size() * sizeof(glm::vec2), batch.scales.data());
+        buffers.setData(batch.size() * sizeof(glm::vec2), batch.scales.data());
         buffers.bind(2);
-        buffers.setData(batch.angles.size() * sizeof(float), batch.angles.data());
+        buffers.setData(batch.size() * sizeof(float), batch.angles.data());
 
         auto &renderMat = renderObjects.getRenderMaterial(matId);
 
@@ -54,8 +78,7 @@ void TRS_BatchSoARenderer::render(OrthoCamera &camera, RenderMesh &renderMesh, R
         renderMat.shaderProgram.setUniform2f("camPos", camera.position);
         renderMat.shaderProgram.setUniformMat4("projection", camera.projection);
 
-        int size = static_cast<int>(batch.positions.size());
-        glDrawElementsInstanced(GL_TRIANGLE_FAN, 6, GL_UNSIGNED_INT, (void*)0, size);
+        renderCall(renderMesh, static_cast<int>(batch.size()));
 
         batch.clear();
     }

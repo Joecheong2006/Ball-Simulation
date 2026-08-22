@@ -23,6 +23,11 @@ void Renderer::submitBatch(int meshId, int matId, const Transform2D::Container &
     renderers[meshId].submitBatch(matId, transforms);
 }
 
+void Renderer::submitBatch(int meshId, int matId, const Transform2D::Container &transforms, int size) {
+    ZoneScoped;
+    renderers[meshId].submitBatch(matId, transforms, size);
+}
+
 void Renderer::render(OrthoCamera &camera) {
     ZoneScoped;
     for (int i = 0; i < (int)renderers.size(); ++i) {

@@ -14,6 +14,24 @@ void TRS_BatchAoSRenderer::initialize(const RenderMesh &renderMesh) {
     buffer.bind();
 
     renderMesh.layout.set(gl::BufferLayout::Aggregate<Transform2D, float>(1), 10);
+
+    if (renderMesh.meshData.indices.size() > 0) {
+        renderCall = [](RenderMesh &renderMesh, int size) {
+            { ZoneScopedN("glDrawElementsInstanced");
+            glDrawElementsInstanced(GL_TRIANGLE_FAN,
+                    static_cast<int>(renderMesh.meshData.indices.size()), GL_UNSIGNED_INT, (void*)0, size);
+            }
+        };
+    }
+    else {
+        renderCall = [](RenderMesh &renderMesh, int size) {
+            { ZoneScopedN("glDrawArraysInstanced");
+            glDrawArraysInstanced(GL_TRIANGLE_FAN, 0,
+                    static_cast<int>(renderMesh.meshData.vertex.size()), size);
+            }
+        };
+    }
+
 }
 
 void TRS_BatchAoSRenderer::submit(int matId, const Transform2D &transform) {
@@ -24,6 +42,11 @@ void TRS_BatchAoSRenderer::submit(int matId, const Transform2D &transform) {
 void TRS_BatchAoSRenderer::submitBatch(int matId, const Transform2D::Container &transforms) {
     ZoneScoped;
     batches[matId].append(transforms);
+}
+
+void TRS_BatchAoSRenderer::submitBatch(int matId, const Transform2D::Container &transforms, int size) {
+    ZoneScoped;
+    batches[matId].append(transforms, size);
 }
 
 void TRS_BatchAoSRenderer::render(OrthoCamera &camera, RenderMesh &renderMesh, RenderObjects &renderObjects) {
@@ -40,8 +63,7 @@ void TRS_BatchAoSRenderer::render(OrthoCamera &camera, RenderMesh &renderMesh, R
         renderMat.shaderProgram.setUniform2f("camPos", camera.position);
         renderMat.shaderProgram.setUniformMat4("projection", camera.projection);
 
-        int size = static_cast<int>(batch.transforms.size());
-        glDrawElementsInstanced(GL_TRIANGLE_FAN, 6, GL_UNSIGNED_INT, (void*)0, size);
+        renderCall(renderMesh, static_cast<int>(batch.size()));
 
         batch.clear();
     }
