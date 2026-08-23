@@ -37,7 +37,6 @@ void TRS_BatchAoSRenderer::bindLayout(const gl::BufferLayout &layout) const {
 }
 
 void TRS_BatchAoSRenderer::submit(int matId, const Transform2D &transform) {
-    ZoneScoped;
     batches[matId].add(transform);
 }
 

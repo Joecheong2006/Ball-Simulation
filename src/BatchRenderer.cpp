@@ -23,7 +23,6 @@ void BatchRenderer::bindLayout(const gl::BufferLayout &layout) const {
 }
 
 void BatchRenderer::submit(int matId, const Transform2D &transform) {
-    ZoneScoped;
     Dispatch([&matId, &transform](auto *obj) {
             obj->submit(matId, transform);
         });

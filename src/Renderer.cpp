@@ -17,7 +17,6 @@ void Renderer::initialize(RenderObjects &&renderObjects) {
 }
 
 void Renderer::submit(int meshId, int matId, const Transform2D &transform) {
-    ZoneScoped;
     renderers[meshId].submit(matId, transform);
 }
 
