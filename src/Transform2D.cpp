@@ -12,56 +12,57 @@ glm::mat4 Transform2D::toMat4() {
     return m;
 }
 
-void Transform2D::SoA::append(const SoA *transforms, int size) {
-    ZoneScoped;
-    positions.insert(positions.end(),
-            transforms->positions.begin(), transforms->positions.begin() + size);
-
-    scales.insert(scales.end(),
-            transforms->scales.begin(), transforms->scales.begin() + size);
-
-    angles.insert(angles.end(),
-            transforms->angles.begin(), transforms->angles.begin() + size);
-}
-
 void Transform2D::SoA::append(const Container &transforms) {
     ZoneScoped;
-    if (transforms.is<Transform2D::SoA>()) {
-        auto *soa = transforms.cast<Transform2D::SoA>();
-        this->append(soa, soa->size());
-    }
-    assert(true); // Unkown container type
+    append(transforms, transforms.size());
 }
 
 void Transform2D::SoA::append(const Container &transforms, int size) {
     ZoneScoped;
     if (transforms.is<Transform2D::SoA>()) {
-        this->append(transforms.cast<Transform2D::SoA>(), size);
+        this->append(*transforms.cast<Transform2D::SoA>(), size);
     }
-    assert(true); // Unkown container type
+    assert(true && "Unkown container type");
+}
+
+void Transform2D::SoA::append(const SoA &transforms) {
+    append(transforms, static_cast<int>(transforms.size()));
+}
+
+void Transform2D::SoA::append(const SoA &transforms, int size) {
+    ZoneScoped;
+    positions.insert(positions.end(),
+            transforms.positions.begin(), transforms.positions.begin() + size);
+
+    scales.insert(scales.end(),
+            transforms.scales.begin(), transforms.scales.begin() + size);
+
+    angles.insert(angles.end(),
+            transforms.angles.begin(), transforms.angles.begin() + size);
 }
 
 void Transform2D::AoS::append(const Container &transforms) {
     ZoneScoped;
-    if (transforms.is<Transform2D::AoS>()) {
-        auto *aos = transforms.cast<Transform2D::AoS>();
-        this->append(aos, aos->size());
-    }
-    assert(true);
+    append(transforms, transforms.size());
 }
 
 void Transform2D::AoS::append(const Container &transforms, int size) {
     ZoneScoped;
     if (transforms.is<Transform2D::AoS>()) {
-        this->append(transforms.cast<Transform2D::AoS>(), size);
+        this->append(*transforms.cast<Transform2D::AoS>(), size);
     }
-    assert(true);
+    assert(true && "Unkown container type");
 }
 
-void Transform2D::AoS::append(const AoS *transforms, int size) {
+void Transform2D::AoS::append(const AoS &transforms) {
+    ZoneScoped;
+    append(transforms, static_cast<int>(transforms.size()));
+}
+
+void Transform2D::AoS::append(const AoS &transforms, int size) {
     ZoneScoped;
     this->transforms.insert(this->transforms.end(),
-            transforms->transforms.begin(), transforms->transforms.begin() + size);
+            transforms.transforms.begin(), transforms.transforms.begin() + size);
 }
 
 Transform2D::Container::Container() noexcept
@@ -92,6 +93,12 @@ int Transform2D::Container::size() const {
         });
 }
 
+Transform2D Transform2D::Container::at(int i) const {
+    return Dispatch([&](auto *obj) {
+            return obj->at(i);
+        });
+}
+
 glm::vec2 Transform2D::Container::getPositionAt(int i) const {
     return Dispatch([&](auto *obj) {
             return obj->getPositionAt(i);
@@ -104,7 +111,7 @@ float Transform2D::Container::getAngleAt(int i) const {
         });
 }
 
-void Transform2D::Container::setPositionAt(int i, glm::vec2 position) {
+void Transform2D::Container::setPositionAt(int i, const glm::vec2 &position) {
     Dispatch([&i, &position](auto *obj) {
             obj->setPositionAt(i, position);
         });

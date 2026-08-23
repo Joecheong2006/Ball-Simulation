@@ -17,7 +17,8 @@ struct Transform2D {
 
         void append(const Container &transforms);
         void append(const Container &transforms, int size);
-        void append(const SoA *transforms, int size);
+        void append(const SoA &transforms);
+        void append(const SoA &transforms, int size);
 
         inline void add(const Transform2D &transform) {
             positions.push_back(transform.position);
@@ -25,8 +26,12 @@ struct Transform2D {
             angles.push_back(transform.angle);
         }
 
-        int size() const {
+        inline int size() const {
             return static_cast<int>(positions.size());
+        }
+
+        inline Transform2D at(int i) const {
+            return { positions[i], scales[i], angles[i] };
         }
 
         inline glm::vec2 getPositionAt(int i) const {
@@ -37,7 +42,7 @@ struct Transform2D {
             return angles[i];
         }
 
-        inline void setPositionAt(int i, glm::vec2 position) {
+        inline void setPositionAt(int i, const glm::vec2 &position) {
             positions[i] = position;
         }
 
@@ -57,14 +62,19 @@ struct Transform2D {
 
         void append(const Container &transforms);
         void append(const Container &transforms, int size);
-        void append(const AoS *transforms, int size);
+        void append(const AoS &transforms);
+        void append(const AoS &transforms, int size);
 
         inline void add(const Transform2D &transform) {
             transforms.push_back(transform);
         }
 
-        int size() const {
+        inline int size() const {
             return static_cast<int>(transforms.size());
+        }
+
+        inline Transform2D at(int i) const {
+            return transforms[i];
         }
 
         inline glm::vec2 getPositionAt(int i) const {
@@ -75,7 +85,7 @@ struct Transform2D {
             return transforms[i].angle;
         }
 
-        inline void setPositionAt(int i, glm::vec2 position) {
+        inline void setPositionAt(int i, const glm::vec2 &position) {
             transforms[i].position = position;
         }
 
@@ -98,9 +108,10 @@ struct Transform2D {
         void append(const Container &transforms, int size);
 
         int size() const;
+        Transform2D at(int i) const;
         glm::vec2 getPositionAt(int i) const;
         float getAngleAt(int i) const;
-        void setPositionAt(int i, glm::vec2 position);
+        void setPositionAt(int i, const glm::vec2 &position);
         void setAngleAt(int i, float angle);
         void clear();
     };
