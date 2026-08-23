@@ -58,14 +58,11 @@ void TRS_BatchAoSRenderer::render(int meshId, OrthoCamera &camera, RenderObjects
         buffer.setData(batch.transforms.size() * sizeof(Transform2D), batch.transforms.data());
 
         auto &renderMat = renderObjects.getRenderMaterial(matId);
-
-        renderMat.shaderProgram.use();
+        renderMat.activate();
+        renderMat.setShaderCameraState(camera);
 
         const RenderMesh &renderMesh = renderObjects.getRenderMesh(meshId);
         renderMesh.activate();
-
-        renderMat.shaderProgram.setUniform2f("camPos", camera.position);
-        renderMat.shaderProgram.setUniformMat4("projection", camera.projection);
 
         renderCall(renderMesh, static_cast<int>(batch.size()));
 

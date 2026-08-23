@@ -1,5 +1,6 @@
 #include "RenderMaterial.h"
 
+#include "OrthoCamera.h"
 #include "profiling.h"
 
 RenderMaterial::RenderMaterial(gl::Shader vertex, gl::Shader fragment) noexcept
@@ -25,4 +26,15 @@ void RenderMaterial::initialize() {
     fragment.del();
 
     shaderProgram.link();
+}
+
+void RenderMaterial::activate() const {
+    ZoneScoped;
+    shaderProgram.use();
+}
+
+void RenderMaterial::setShaderCameraState(const OrthoCamera &camera) {
+    ZoneScoped;
+    shaderProgram.setUniform2f("camPos", camera.position);
+    shaderProgram.setUniformMat4("projection", camera.projection);
 }
