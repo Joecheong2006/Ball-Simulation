@@ -22,8 +22,10 @@ public:
         return GetIndex<T, AllowedTypes...>::value;
     }
 
+    inline int id() const { return type_id; }
+
     template <typename T>
-    bool is() const { return type_id == TypeIndex<T>(); }
+    bool is() const { return id() == TypeIndex<T>(); }
 
     template <typename T>
     T *cast() const { return reinterpret_cast<T *>(raw_ptr); }
@@ -53,7 +55,7 @@ private:
     template <int Index, typename ReturnType, typename Functor>
     inline ReturnType dispatch_flat(Functor &&func) const {
         if constexpr (Index < sizeof...(AllowedTypes)) {
-            if (type_id == Index) {
+            if (id() == Index) {
                 using SpecificType = typename std::tuple_element<Index, std::tuple<AllowedTypes...>>::type;
                 return func(static_cast<SpecificType*>(raw_ptr));
             }
