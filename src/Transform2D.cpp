@@ -1,5 +1,5 @@
-#include "Transform2D.h"
-#include "profiling.h"
+#include "Transform2D.hpp"
+#include "profiling.hpp"
 
 glm::mat4 Transform2D::toMat4() {
     ZoneScoped;

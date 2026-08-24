@@ -1,5 +1,5 @@
-#include "gl/Buffers.h"
-#include "profiling.h"
+#include "gl/Buffers.hpp"
+#include "profiling.hpp"
 
 namespace gl {
     Buffers::Buffers(int target): target(target) {}

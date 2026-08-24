@@ -1,6 +1,6 @@
-#include "RenderMesh.h"
+#include "RenderMesh.hpp"
 
-#include "profiling.h"
+#include "profiling.hpp"
 
 RenderMesh::RenderMesh(MeshData &&meshData) noexcept
     : Vbo(GL_ARRAY_BUFFER), Ebo(GL_ELEMENT_ARRAY_BUFFER), meshData(std::move(meshData))

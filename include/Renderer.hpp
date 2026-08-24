@@ -1,7 +1,7 @@
 #pragma once
 
-#include "RenderObjects.h"
-#include "BatchRenderer.h"
+#include "RenderObjects.hpp"
+#include "BatchRenderer.hpp"
 #include <vector>
 
 class Renderer {

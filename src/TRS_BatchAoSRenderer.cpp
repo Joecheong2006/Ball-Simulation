@@ -1,10 +1,10 @@
-#include "TRS_BatchAoSRenderer.h"
+#include "TRS_BatchAoSRenderer.hpp"
 
-#include "RenderMesh.h"
-#include "RenderMaterial.h"
-#include "OrthoCamera.h"
-#include "RenderObjects.h"
-#include "profiling.h"
+#include "RenderMesh.hpp"
+#include "RenderMaterial.hpp"
+#include "OrthoCamera.hpp"
+#include "RenderObjects.hpp"
+#include "profiling.hpp"
 
 void TRS_BatchAoSRenderer::initialize(const RenderMesh &renderMesh) {
     ZoneScoped;

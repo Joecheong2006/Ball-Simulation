@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gl/ShaderProgram.h"
+#include "gl/ShaderProgram.hpp"
 
 struct OrthoCamera;
 class RenderMaterial {

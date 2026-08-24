@@ -1,7 +1,7 @@
-#include "OrthoCamera.h"
-#include "profiling.h"
+#include "OrthoCamera.hpp"
+#include "profiling.hpp"
 
-#include "MainWindow.h"
+#include "MainWindow.hpp"
 
 OrthoCamera::OrthoCamera(glm::vec2 position, glm::vec2 viewportSize, float near, float far)
     : position(position)

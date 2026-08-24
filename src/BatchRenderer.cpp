@@ -1,8 +1,8 @@
-#include "BatchRenderer.h"
-#include "profiling.h"
+#include "BatchRenderer.hpp"
+#include "profiling.hpp"
 
-#include "TRS_BatchSoARenderer.h"
-#include "TRS_BatchAoSRenderer.h"
+#include "TRS_BatchSoARenderer.hpp"
+#include "TRS_BatchAoSRenderer.hpp"
 
 BatchRenderer::BatchRenderer() noexcept
     : TaggedPointer(new TRS_BatchSoARenderer())

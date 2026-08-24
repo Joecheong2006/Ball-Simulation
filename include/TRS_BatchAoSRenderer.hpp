@@ -1,8 +1,8 @@
 #pragma once
 
-#include "RenderMesh.h"
-#include "Transform2D.h"
-#include "gl/Buffer.h"
+#include "RenderMesh.hpp"
+#include "Transform2D.hpp"
+#include "gl/Buffer.hpp"
 
 #include <unordered_map>
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "profiling.h"
+#include "profiling.hpp"
 
-#include "aggreate.h"
+#include "aggreate.hpp"
 
 #include <vector>
 #include <numeric>

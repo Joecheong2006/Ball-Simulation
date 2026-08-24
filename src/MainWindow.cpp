@@ -1,5 +1,5 @@
-#include "MainWindow.h"
-#include "profiling.h"
+#include "MainWindow.hpp"
+#include "profiling.hpp"
 
 #include <assert.h>
 #include <iostream>

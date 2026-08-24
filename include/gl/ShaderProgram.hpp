@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "Shader.h"
+#include "Shader.hpp"
 #include <unordered_map>
 
 #include <cstddef>

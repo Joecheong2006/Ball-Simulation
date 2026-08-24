@@ -5,39 +5,6 @@
 
 template <typename... AllowedTypes>
 class TaggedPointer {
-public:
-    TaggedPointer() = default;
-
-    template <typename T>
-    explicit TaggedPointer(T *raw_ptr) : raw_ptr(raw_ptr) {
-        type_id = GetIndex<T, AllowedTypes...>::value;
-    }
-
-    struct TotalTypes {
-        inline static constexpr int value = sizeof...(AllowedTypes);
-    };
-
-    template <typename T>
-    inline static constexpr int TypeIndex() {
-        return GetIndex<T, AllowedTypes...>::value;
-    }
-
-    inline int id() const { return type_id; }
-
-    template <typename T>
-    bool is() const { return id() == TypeIndex<T>(); }
-
-    template <typename T>
-    T *cast() const { return reinterpret_cast<T *>(raw_ptr); }
-
-protected:
-    template <typename Functor>
-        auto Dispatch(Functor &&func) const {
-            using FirstType = typename std::tuple_element<0, std::tuple<AllowedTypes...>>::type;
-            using ReturnType = decltype(func(std::declval<FirstType*>()));
-            return dispatch_flat<0, ReturnType>(std::forward<Functor>(func));
-        }
-
 private:
     template <typename T, typename... List>
     struct GetIndex;
@@ -66,5 +33,38 @@ private:
 
     void *raw_ptr;
     int type_id;
+
+public:
+    TaggedPointer() = default;
+
+    template <typename T>
+    explicit TaggedPointer(T *raw_ptr) : raw_ptr(raw_ptr) {
+        type_id = TypeId<T>::value;
+    }
+
+    struct TotalTypes {
+        static constexpr int value = sizeof...(AllowedTypes);
+    };
+
+    template <typename T>
+    struct TypeId {
+        static constexpr int value = GetIndex<T, AllowedTypes...>::value;
+    };
+
+    inline int id() const { return type_id; }
+
+    template <typename T>
+    bool is() const { return id() == TypeId<T>::value; }
+
+    template <typename T>
+    T *cast() const { return reinterpret_cast<T *>(raw_ptr); }
+
+protected:
+    template <typename Functor>
+        auto Dispatch(Functor &&func) const {
+            using FirstType = typename std::tuple_element<0, std::tuple<AllowedTypes...>>::type;
+            using ReturnType = decltype(func(std::declval<FirstType*>()));
+            return dispatch_flat<0, ReturnType>(std::forward<Functor>(func));
+        }
 
 };

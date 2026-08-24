@@ -1,5 +1,5 @@
-#include "gl/Shader.h"
-#include "profiling.h"
+#include "gl/Shader.hpp"
+#include "profiling.hpp"
 
 namespace gl {
     Shader::Shader(int type, std::string_view source)

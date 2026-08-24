@@ -82,92 +82,196 @@ void main() {
 }
 )";
 
-#include "gl/BufferLayout.h"
+#include "gl/BufferLayout.hpp"
 
-#include "MainWindow.h"
+#include "MainWindow.hpp"
 
-struct Circle {
-    glm::vec2 origin;
-    float radius;
+class BumpAllocator {
+    std::byte *bytes;
+    int top{};
+
+public:
+    BumpAllocator(int size)
+        : bytes(new std::byte[size])
+    {}
+
+    ~BumpAllocator() {
+        delete[] bytes;
+    }
+
+    BumpAllocator(BumpAllocator &&) = delete;
+    void operator=(BumpAllocator &&) = delete;
+    
+    template <typename T, typename... Args>
+    T *alloc(Args&&... args) {
+        auto location = top;
+
+        T *ptr = new(bytes + location) T(std::forward<Args>(args)...);
+
+        top += sizeof(T);
+        return ptr;
+    }
+
+    void clear() {
+        top = 0;
+    }
+
 };
 
-struct Square {
-    glm::vec2 size;
+#include "TaggedPointer.hpp"
+#include "Transform2D.hpp"
+
+struct AABB {
+    glm::vec2 min, max;
+
+    bool intersect(const AABB &aabb) const {
+        return (min.x <= aabb.max.x && max.x >= aabb.min.x) &&
+               (min.y <= aabb.max.y && max.y >= aabb.min.y);
+    }
 };
 
 struct Physics2DState {
-    glm::vec2 p, v, a;
+    glm::vec2 p, v, a{ 0, -9.81f };
     float theta;
+};
+
+struct Circle {
+    float radius;
+    AABB getAABB(const Physics2DState &state) const {
+        return {
+            state.p - glm::vec2(radius), state.p + glm::vec2(radius)
+        };
+    }
+};
+
+struct Box {
+    glm::vec2 size;
+    AABB getAABB(const Physics2DState &state) const {
+        glm::vec2 r = glm::vec2{ size.x * cos(state.theta), size.y * sin(state.theta) } * 0.5f;
+        return {
+            state.p - r, state.p + r
+        };
+    }
+};
+
+struct Shape : public TaggedPointer<Circle, Box> {
+    using TaggedPointer::TaggedPointer;
+
+    AABB getAABB(const Physics2DState &state) const {
+        return Dispatch([&state](auto *obj) {
+                return obj->getAABB(state);
+            });
+    }
+
 };
 
 struct Physics2DStates {
     std::vector<glm::vec2> p, v, a;
     std::vector<float> theta;
+
+    Physics2DState at(int i) const {
+        return {
+            p[i], v[i], a[i], theta[i]
+        };
+    }
 };
 
 struct Physics2DWorld {
-    std::vector<Circle> circles;
-    std::vector<Square> squares;
-    Physics2DStates physicsStates;
-    int N = 0;
+    std::vector<Shape> shapes;
+    std::vector<AABB> AABBs;
+    Physics2DStates states;
+
+    template <typename T>
+    void add(T *obj, const Physics2DState &state = {}) {
+        shapes.emplace_back(obj);
+        addPhysicsState(state);
+        AABBs.push_back(obj->getAABB(state));
+    }
 
     void addPhysicsState(const Physics2DState &state) {
-        physicsStates.p.push_back(state.p);
-        physicsStates.v.push_back(state.v);
-        physicsStates.a.push_back(state.a);
-        physicsStates.theta.push_back(state.theta);
+        states.p.push_back(state.p);
+        states.v.push_back(state.v);
+        states.a.push_back(state.a);
+        states.theta.push_back(state.theta);
     }
 
-    void addCircle(const Circle &circle, const Physics2DState &state = {}) {
-        ZoneScoped;
-        circles.push_back(circle);
-        addPhysicsState(state);
-        ++N;
-    }
-
-    void addSquare(const Square &square, const Physics2DState &state = {}) {
-        ZoneScoped;
-        squares.push_back(square);
-        addPhysicsState(state);
-        ++N;
-    }
-
-    void updatePhysicsStates(float dt) {
+    void updatePhysicsStates(Transform2D::SoA &transforms, float dt) {
         ZoneScoped;
         float dt2 = dt * dt;
 
-        for (std::size_t i = 0; i < N; ++i) {
-            const auto &a = physicsStates.a[i] = glm::vec2(0.0f, -9.81f);
-            const auto &v = physicsStates.v[i] += a * dt;
-            physicsStates.p[i] += 0.5f * a * dt2 + v * dt;
+        // int range = static_cast<int>(shapes.size());
+        // std::vector<std::pair<int, int>> splits = {
+        //     { 0, range / 4},
+        //     { range / 4, range / 2 },
+        //     { range / 2, range * 3 / 4 },
+        //     { range * 3 / 4, range }
+        // };
+        //
+        // for_each(std::execution::par, splits.begin(), splits.end(),
+        //     [&](auto &range) {
+        //         for (auto i = range.first; i < range.second; ++i) {
+        //             states.v[i] += states.a[i] * dt;
+        //             states.p[i] += 0.5f * states.a[i] * dt2 + states.v[i] * dt;
+        //         }
+        //     });
+
+        for (auto i = 0; i < shapes.size(); ++i) {
+            states.v[i] += states.a[i] * dt;
+            states.p[i] += 0.5f * states.a[i] * dt2 + states.v[i] * dt;
         }
     }
 
-    void updatePhysics(float dt) {
+    void updateAABBs() {
         ZoneScoped;
-        updatePhysicsStates(dt);
+
+        for (auto i = 0; i < shapes.size(); ++i) {
+            AABBs[i] = shapes[i].getAABB(states.at(i));
+        }
+    }
+
+    void testCollisionAABBs() {
+        ZoneScoped;
+        static std::vector<glm::ivec2> collisions;
+        collisions.clear();
+        collisions.resize(shapes.size());
+
+        for (auto i = 0; i < shapes.size(); ++i) {
+            const auto &aabb = AABBs[i];
+            for (auto j = i + 1; j < shapes.size(); ++j) {
+                if (aabb.intersect(AABBs[j])) {
+                    collisions.push_back({i, j});
+                }
+            }
+        }
+    }
+
+    void updatePhysics(Transform2D::SoA &transforms, float dt) {
+        ZoneScoped;
+        updatePhysicsStates(transforms, dt);
+        updateAABBs();
+        testCollisionAABBs();
     }
 };
 
 struct World {
 };
 
-#include "RenderMesh.h"
-#include "RenderMaterial.h"
+#include "RenderMesh.hpp"
+#include "RenderMaterial.hpp"
 
-#include "OrthoCamera.h"
+#include "OrthoCamera.hpp"
 
 struct Vertex {
     glm::vec2 position;
     glm::vec2 texCoord;
 };
 
-#include "RenderObjects.h"
-#include "Renderer.h"
+#include "RenderObjects.hpp"
+#include "Renderer.hpp"
 
 using FunctorGetRandom = glm::vec2(*)();
-Transform2D::Container randomCircles(int n, Physics2DWorld &physicsWorld, FunctorGetRandom getRandomPoint);
-Transform2D::Container randomSquares(int n, Physics2DWorld &physicsWorld, FunctorGetRandom getRandomPoint);
+void randomCircles(int n, Physics2DWorld &physicsWorld, FunctorGetRandom getRandomPoint, Transform2D::SoA &transforms);
+void randomSquares(int n, Physics2DWorld &physicsWorld, FunctorGetRandom getRandomPoint, Transform2D::SoA &transforms);
 
 glm::vec2 randomPointFromHeart();
 
@@ -235,6 +339,10 @@ int main(void) {
             );
         });
 
+    std::pair<int, int> shapeRenderKeys[Shape::TotalTypes::value];
+    shapeRenderKeys[Shape::TypeId<Circle>::value] = { quatId, circleMaterialId };
+    shapeRenderKeys[Shape::TypeId<Box>::value] = { quatId, blueMaterialId };
+
     renderObjects.initialize();
 
     //
@@ -260,11 +368,15 @@ int main(void) {
     // Initialize instnaces' circle
     //
 
-    int circleCount = 1000;
-    Transform2D::Container circleTransforms = randomCircles(circleCount, physicsWorld, randomPointFromHeart);
+    Transform2D::SoA transforms;
 
-    int squareCount = 500;
-    Transform2D::Container transforms = randomSquares(squareCount, physicsWorld, randomPointFromHeart);
+    { ZoneScopedN("Generating Shapes");
+        int circleCount = 1000;
+        randomCircles(circleCount, physicsWorld, randomPointFromHeart, transforms);
+
+        int squareCount = 1000;
+        randomSquares(squareCount, physicsWorld, randomPointFromHeart, transforms);
+    }
 
     while (!MainWindow::ShouldClose()) {
         FrameMark;
@@ -272,22 +384,19 @@ int main(void) {
         glClearColor(0.1f, 0.2f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        physicsWorld.updatePhysics(1.f / 1200);
+        physicsWorld.updatePhysics(transforms, 1.f / 1200);
 
-        { ZoneScopedN("Sync physics states");
-            for (auto i = 0; i < circleCount; ++i) {
-                circleTransforms.setPositionAt(i, physicsWorld.physicsStates.p[i]);
-                circleTransforms.setAngleAt(i, physicsWorld.physicsStates.theta[i]);
-            }
-            for (auto i = 0; i < squareCount; ++i) {
-                transforms.setPositionAt(i, physicsWorld.physicsStates.p[i + circleCount]);
-                transforms.setAngleAt(i, physicsWorld.physicsStates.theta[i + circleCount]);
+        { ZoneScopedN("Submit");
+            transforms.positions.assign(physicsWorld.states.p.begin(), physicsWorld.states.p.end());
+            transforms.angles.assign(physicsWorld.states.theta.begin(), physicsWorld.states.theta.end());
+            for (int i = 0; i < (int)physicsWorld.shapes.size(); ++i) {
+                auto &shape = physicsWorld.shapes[i];
+                auto &[meshId, matId] = shapeRenderKeys[shape.id()];
+                renderer.submit(meshId, matId, transforms.at(i));
             }
         }
 
         FrameMarkStart("Render");
-        renderer.submitBatch(quatId, blueMaterialId, transforms);
-        renderer.submitBatch(quatId, circleMaterialId, circleTransforms);
         renderer.render(camera);
         FrameMarkEnd("Render");
 
@@ -321,25 +430,19 @@ glm::vec2 randomPointFromHeart() {
     return { x, y };
 }
 
-Transform2D::Container randomCircles(int n, Physics2DWorld &physicsWorld, FunctorGetRandom getRandomPoint) {
-    Transform2D::Container transforms{};
-
+void randomCircles(int n, Physics2DWorld &physicsWorld, FunctorGetRandom getRandomPoint, Transform2D::SoA &transforms) {
     for (int i = 0; i < n; ++i) {
         glm::vec2 u = getRandomPoint();
 
         float u2 = dis(gen) * 0.05f;
 
-        physicsWorld.addCircle({ { 0, 0 }, u2 }, { u });
+        physicsWorld.add(new Circle{ u2 }, { u });
         Transform2D transform = { u, { u2, u2 }, 0.f };
         transforms.add(transform);
     }
-
-    return transforms;
 }
 
-Transform2D::Container randomSquares(int n, Physics2DWorld &physicsWorld, FunctorGetRandom getRandomPoint) {
-    Transform2D::Container transforms{};
-
+void randomSquares(int n, Physics2DWorld &physicsWorld, FunctorGetRandom getRandomPoint, Transform2D::SoA &transforms) {
     for (int i = 0; i < n; ++i) {
         glm::vec2 u = getRandomPoint();
 
@@ -348,10 +451,11 @@ Transform2D::Container randomSquares(int n, Physics2DWorld &physicsWorld, Functo
 
         float theta = dis(gen) * pi * 180.0f;
 
-        physicsWorld.addSquare({ { u1, u2 } }, { u, {}, {}, theta });
+        Physics2DState state{};
+        state.p = u;
+        state.theta = theta;
+        physicsWorld.add(new Box{ { u1, u2 } }, state);
         Transform2D transform = { u, { u1, u2 }, theta };
         transforms.add(transform);
     }
-
-    return transforms;
 }

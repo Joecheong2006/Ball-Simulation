@@ -1,7 +1,7 @@
-#include "RenderMaterial.h"
+#include "RenderMaterial.hpp"
 
-#include "OrthoCamera.h"
-#include "profiling.h"
+#include "OrthoCamera.hpp"
+#include "profiling.hpp"
 
 RenderMaterial::RenderMaterial(gl::Shader vertex, gl::Shader fragment) noexcept
     : vertex(vertex), fragment(fragment)

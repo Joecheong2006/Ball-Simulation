@@ -1,5 +1,5 @@
-#include "Resources.h"
-#include "profiling.h"
+#include "Resources.hpp"
+#include "profiling.hpp"
 
 #include "stb_image/stb_image.h"
 #include <string>

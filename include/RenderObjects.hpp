@@ -1,7 +1,7 @@
 #pragma once
 #include <functional>
 
-#include "RenderMaterial.h"
+#include "RenderMaterial.hpp"
 
 class RenderMesh;
 class RenderObjects {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "gl/BufferLayout.h"
+#include "gl/BufferLayout.hpp"
 
 struct MeshData {
     std::vector<float> vertex;

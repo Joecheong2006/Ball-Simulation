@@ -1,7 +1,7 @@
-#include "Renderer.h"
-#include "profiling.h"
+#include "Renderer.hpp"
+#include "profiling.hpp"
 
-#include "TRS_BatchSoARenderer.h"
+#include "TRS_BatchSoARenderer.hpp"
 
 void Renderer::initialize(RenderObjects &&renderObjects) {
     ZoneScoped;

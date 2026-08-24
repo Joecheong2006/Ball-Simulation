@@ -1,25 +1,26 @@
 #pragma once
 
-#include "TaggedPointer.h"
-#include "Transform2D.h"
-#include "gl/BufferLayout.h"
+#include "RenderMesh.hpp"
+#include "Transform2D.hpp"
+#include "gl/Buffers.hpp"
 
-struct TRS_BatchSoARenderer;
-struct TRS_BatchAoSRenderer;
-struct OrthoCamera;
+#include <unordered_map>
 
-class RenderMesh;
+struct OrthoCamrea;
 class RenderObjects;
 
-struct BatchRenderer : TaggedPointer<TRS_BatchSoARenderer, TRS_BatchAoSRenderer> {
-    using TaggedPointer::TaggedPointer;
+struct TRS_BatchSoARenderer {
+    std::unordered_map<int, Transform2D::SoA> batches;
+    gl::Buffers buffers{GL_ARRAY_BUFFER};
+    void (*renderCall)(const RenderMesh &renderMesh, int size);
 
-    BatchRenderer() noexcept;
+    TRS_BatchSoARenderer() = default;
+
     void initialize(const RenderMesh &renderMesh);
     void bindLayout(const gl::BufferLayout &layout) const;
     void submit(int matId, const Transform2D &transform);
     void submitBatch(int matId, const Transform2D::Container &transforms);
     void submitBatch(int matId, const Transform2D::Container &transforms, int size);
     void render(int meshId, OrthoCamera &camera, RenderObjects &renderObjects);
-
 };
+

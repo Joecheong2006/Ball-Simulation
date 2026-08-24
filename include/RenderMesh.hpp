@@ -1,9 +1,9 @@
 #pragma once
 
-#include "MeshData.h"
-#include "gl/Buffer.h"
+#include "MeshData.hpp"
+#include "gl/Buffer.hpp"
 
-#include "BatchRenderer.h"
+#include "BatchRenderer.hpp"
 
 class RenderMesh {
     gl::BufferLayout layout;

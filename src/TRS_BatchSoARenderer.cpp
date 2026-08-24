@@ -1,11 +1,11 @@
-#include "TRS_BatchSoARenderer.h"
+#include "TRS_BatchSoARenderer.hpp"
 
-#include "RenderMesh.h"
-#include "RenderMaterial.h"
-#include "OrthoCamera.h"
-#include "RenderObjects.h"
+#include "RenderMesh.hpp"
+#include "RenderMaterial.hpp"
+#include "OrthoCamera.hpp"
+#include "RenderObjects.hpp"
 
-#include "profiling.h"
+#include "profiling.hpp"
 
 void TRS_BatchSoARenderer::initialize(const RenderMesh &renderMesh) {
     ZoneScoped;

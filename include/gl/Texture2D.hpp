@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <glad/gl.h> 
 
-#include "Resources.h"
+#include "Resources.hpp"
 
 namespace gl {
     struct Texture2D {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include "TaggedPointer.h"
+#include "TaggedPointer.hpp"
 
 struct Transform2D {
     glm::vec2 position, scale;

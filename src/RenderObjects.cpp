@@ -1,9 +1,9 @@
-#include "RenderObjects.h"
+#include "RenderObjects.hpp"
 
-#include "RenderMesh.h"
-#include "RenderMaterial.h"
+#include "RenderMesh.hpp"
+#include "RenderMaterial.hpp"
 
-#include "profiling.h"
+#include "profiling.hpp"
 
 void RenderObjects::initialize() {
     ZoneScoped;

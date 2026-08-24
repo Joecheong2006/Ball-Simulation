@@ -1,5 +1,5 @@
-#include "gl/ShaderProgram.h"
-#include "profiling.h"
+#include "gl/ShaderProgram.hpp"
+#include "profiling.hpp"
 
 namespace gl {
     void ShaderProgram::initialize() {
