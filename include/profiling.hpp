@@ -4,8 +4,8 @@
     #include <tracy/Tracy.hpp>
 #else
     #define ZoneScoped
-    #define ZoneScopedN
+    #define ZoneScopedN(X)
     #define FrameMark
-    #define FrameMarkStart
-    #define FrameMarkEnd
+    #define FrameMarkStart(X)
+    #define FrameMarkEnd(X)
 #endif

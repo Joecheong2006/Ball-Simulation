@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "glm/glm.hpp"
-#include "TaggedPointer.h"
+#include "TaggedPointer.hpp"
 
 constexpr float PI = 3.14159265358979323846f;
 
